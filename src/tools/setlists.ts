@@ -1,9 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult } from '@chrischall/mcp-utils';
+import { textResult, isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
-import { isoToApiDate, isoToApiTimestamp } from '../dates.js';
 
 // How to read a setlist's song data (per setlist.fm's guidelines), so the model
 // renders shows correctly. Appended to the get_setlist descriptions.
@@ -50,8 +49,8 @@ export function registerSetlistTools(server: McpServer): void {
     },
     async (args) => {
       const query = { ...args } as Record<string, string | number | undefined>;
-      if (args.date) query.date = isoToApiDate(args.date);
-      if (args.lastUpdated) query.lastUpdated = isoToApiTimestamp(args.lastUpdated);
+      if (args.date) query.date = isoToDmy(args.date);
+      if (args.lastUpdated) query.lastUpdated = isoToCompactTimestamp(args.lastUpdated);
       const data = await client.request('GET', '/1.0/search/setlists', { query });
       return textResult(data);
     },
