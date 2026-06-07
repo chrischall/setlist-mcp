@@ -3,20 +3,12 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { isoToApiDate, isoToApiTimestamp } from '../dates.js';
 
 // How to read a setlist's song data (per setlist.fm's guidelines), so the model
 // renders shows correctly. Appended to the get_setlist descriptions.
 const SETLIST_SHAPE_NOTE =
   ' A setlist\'s songs live in `sets.set[]`; each set may have an `encore` number (1 = first encore) and a `name` (e.g. an acoustic set or a full album). Each `song` may carry: `tape: true` (pre-recorded intro/outro/interlude — not actually performed), `cover` (the original artist when it is a cover), `with` (a guest performer), and `info` (a note like "acoustic" or "first time live").';
-
-// The API wants dates as dd-MM-yyyy and 400s on anything else. Accept an
-// unambiguous ISO date (YYYY-MM-DD) too and convert it, since that's the format
-// a model most often reaches for; pass anything else through for the API to
-// validate (its 400 message names the expected format).
-function normalizeEventDate(date: string): string {
-  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
-  return iso ? `${iso[3]}-${iso[2]}-${iso[1]}` : date.trim();
-}
 
 const page = z
   .number()
@@ -47,17 +39,19 @@ export function registerSetlistTools(server: McpServer): void {
         date: z
           .string()
           .optional()
-          .describe('Event date — accepts ISO YYYY-MM-DD (e.g. 2025-08-28) or the API\'s dd-MM-yyyy (e.g. 28-08-2025)'),
+          .describe('Event date, ISO yyyy-MM-dd (e.g. 2025-08-28)'),
         year: z.number().int().optional().describe('Event year'),
         lastUpdated: z
           .string()
           .optional()
-          .describe('Only setlists updated after this UTC time (format yyyyMMddHHmmss)'),
+          .describe('Only setlists updated on/after this UTC time, ISO yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss'),
         p: page,
       },
     },
     async (args) => {
-      const query = args.date ? { ...args, date: normalizeEventDate(args.date) } : args;
+      const query = { ...args } as Record<string, string | number | undefined>;
+      if (args.date) query.date = isoToApiDate(args.date);
+      if (args.lastUpdated) query.lastUpdated = isoToApiTimestamp(args.lastUpdated);
       const data = await client.request('GET', '/1.0/search/setlists', { query });
       return textResult(data);
     },

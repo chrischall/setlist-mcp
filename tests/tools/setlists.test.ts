@@ -21,10 +21,21 @@ describe('setlist tools', () => {
     await harness.callTool('setlist_search_setlists', {
       artistName: 'Phish',
       year: 2023,
-      date: '07-08-2023',
+      date: '2023-08-07',
     });
     expect(mockRequest).toHaveBeenCalledWith('GET', '/1.0/search/setlists', {
       query: { artistName: 'Phish', year: 2023, date: '07-08-2023' },
+    });
+  });
+
+  it('converts an ISO lastUpdated date to the API yyyyMMddHHmmss filter', async () => {
+    mockRequest.mockResolvedValue({ setlist: [] });
+    await harness.callTool('setlist_search_setlists', {
+      artistName: 'Phish',
+      lastUpdated: '2025-01-31',
+    });
+    expect(mockRequest).toHaveBeenCalledWith('GET', '/1.0/search/setlists', {
+      query: { artistName: 'Phish', lastUpdated: '20250131000000' },
     });
   });
 
