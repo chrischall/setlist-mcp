@@ -1,9 +1,8 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult } from '@chrischall/mcp-utils';
+import { textResult, isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
-import { isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
 
 // How to read a setlist's song data (per setlist.fm's guidelines), so the model
 // renders shows correctly. Appended to the get_setlist descriptions.
