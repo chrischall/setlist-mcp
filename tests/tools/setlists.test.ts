@@ -28,6 +28,22 @@ describe('setlist tools', () => {
     });
   });
 
+  it('normalizes an ISO date (YYYY-MM-DD) to the API dd-MM-yyyy format', async () => {
+    mockRequest.mockResolvedValue({ setlist: [] });
+    await harness.callTool('setlist_search_setlists', { artistName: 'Oasis', date: '2025-08-28' });
+    expect(mockRequest).toHaveBeenCalledWith('GET', '/1.0/search/setlists', {
+      query: { artistName: 'Oasis', date: '28-08-2025' },
+    });
+  });
+
+  it('passes a dd-MM-yyyy date through unchanged', async () => {
+    mockRequest.mockResolvedValue({ setlist: [] });
+    await harness.callTool('setlist_search_setlists', { artistName: 'Oasis', date: '28-08-2025' });
+    expect(mockRequest).toHaveBeenCalledWith('GET', '/1.0/search/setlists', {
+      query: { artistName: 'Oasis', date: '28-08-2025' },
+    });
+  });
+
   it('setlist_get_setlist hits /1.0/setlist/{id}', async () => {
     mockRequest.mockResolvedValue({ id: '63de4613' });
     const result = await harness.callTool('setlist_get_setlist', { setlistId: '63de4613' });
