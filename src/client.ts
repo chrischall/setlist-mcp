@@ -4,9 +4,10 @@ import {
   loadDotenvSafely,
   readEnvVar,
   createApiClient,
+  deepMapStringField,
+  dmyToIso,
   type ApiClient,
 } from '@chrischall/mcp-utils';
-import { withIsoEventDates } from './dates.js';
 
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
@@ -16,28 +17,10 @@ await loadDotenvSafely({ path: join(__dirname, '..', '.env'), override: false })
 
 const BASE_URL = 'https://api.setlist.fm/rest';
 const SERVICE_NAME = 'setlist.fm';
-// Bound every request so a slow/hung upstream fails fast with a clear error
-// instead of hanging the tool call until the host kills it. setlist.fm normally
+// Bound every request so a slow/hung upstream fails fast (createApiClient throws
+// RequestTimeoutError) instead of hanging the tool call. setlist.fm normally
 // answers in well under a second.
 const REQUEST_TIMEOUT_MS = 15_000;
-
-// fetch wrapper that aborts after REQUEST_TIMEOUT_MS and turns the abort into an
-// actionable error. Passed to createApiClient as its fetchImpl, so the 429-retry
-// gets a fresh timeout per attempt.
-const timeoutFetch: typeof fetch = (input, init) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  return fetch(input, { ...init, signal: controller.signal })
-    .catch((err: unknown) => {
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw new Error(
-          `setlist.fm request timed out after ${REQUEST_TIMEOUT_MS / 1000}s — the API may be slow or unreachable. Retry, or narrow the query.`,
-        );
-      }
-      throw err;
-    })
-    .finally(() => clearTimeout(timer));
-};
 
 /** Query params for a GET — undefined/null/empty members are dropped. */
 export type Query = Record<string, string | number | undefined>;
@@ -72,7 +55,7 @@ export class SetlistClient {
       serviceName: SERVICE_NAME,
       retry: { count: 1, delayMs: 2000 },
       baseHeaders: lang ? { 'Accept-Language': lang } : undefined,
-      fetchImpl: timeoutFetch,
+      timeout: REQUEST_TIMEOUT_MS,
     });
   }
 
@@ -98,7 +81,7 @@ export class SetlistClient {
       ...(opts.body !== undefined ? { body: opts.body } : {}),
     });
     // Surface every date as ISO yyyy-MM-dd (the API returns eventDate as dd-MM-yyyy).
-    return withIsoEventDates(data);
+    return deepMapStringField(data, 'eventDate', dmyToIso);
   }
 }
 

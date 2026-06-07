@@ -27,9 +27,9 @@ src/
   version.ts      # single source of truth for VERSION (x-release-please-version)
   index.ts        # MCP server entry — runMcp({ name, version, banner, tools })
   client.ts       # SetlistClient — reads SETLIST_API_KEY, attaches x-api-key
-                  #   header per request, 15s request timeout, one 2s retry on 429,
-                  #   normalizes response eventDate → ISO (withIsoEventDates)
-  dates.ts        # ISO yyyy-MM-dd <-> API formats (dd-MM-yyyy, yyyyMMddHHmmss)
+                  #   header per request, 15s request timeout + 2s 429 retry (both
+                  #   via createApiClient), normalizes response eventDate → ISO
+                  #   (deepMapStringField + dmyToIso from @chrischall/mcp-utils)
   attribution.ts  # ATTRIBUTION_NOTE appended to data tool descriptions
   tools/
     artists.ts    # setlist_search_artists, setlist_get_artist, setlist_get_artist_setlists
@@ -91,8 +91,8 @@ Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). T
 
 - **ESM + NodeNext**: relative imports use `.js` extensions even from `.ts` source.
 - **Read-only API**: setlist.fm exposes no write endpoints; there are no mutating tools and no `confirm` gating.
-- **ISO date surface**: the whole MCP surface uses ISO `yyyy-MM-dd`. The API does NOT — it takes event dates as `dd-MM-yyyy`, `lastUpdated` as `yyyyMMddHHmmss`, and returns `eventDate` as `dd-MM-yyyy`. `src/dates.ts` translates at the boundary: tool inputs convert ISO→API (`isoToApiDate`/`isoToApiTimestamp`), and `client.request` rewrites every response `eventDate`→ISO (`withIsoEventDates`). Keep new date-bearing inputs/outputs ISO; route them through `dates.ts`. `lastUpdated` outputs are already ISO-8601 timestamps and are left as-is.
-- **Request timeout**: `client.ts` wraps fetch with a 15s AbortController timeout (via `createApiClient`'s `fetchImpl`) so a hung upstream fails fast instead of hanging the tool call.
+- **ISO date surface**: the whole MCP surface uses ISO `yyyy-MM-dd`. The API does NOT — it takes event dates as `dd-MM-yyyy`, `lastUpdated` as `yyyyMMddHHmmss`, and returns `eventDate` as `dd-MM-yyyy`. The shared `@chrischall/mcp-utils` date helpers translate at the boundary: tool inputs convert ISO→API (`isoToDmy`/`isoToCompactTimestamp` in `setlists.ts`), and `client.request` rewrites every response `eventDate`→ISO via `deepMapStringField(data, 'eventDate', dmyToIso)`. Keep new date-bearing inputs/outputs ISO and route them through those helpers. `lastUpdated` outputs are already ISO-8601 timestamps and are left as-is.
+- **Request timeout**: `createApiClient({ timeout: 15_000 })` bounds each request (throws mcp-utils' `RequestTimeoutError`) so a hung upstream fails fast instead of hanging the tool call.
 - **Rate limiting**: 429 retries once after 2s, then throws. setlist.fm's standard tier is ~2 req/sec, 1440/day.
 - **Bad key → 403** (not 401): `setlist_healthcheck` distinguishes "no key" vs "bad key (401/403)" vs other errors in its hint.
 - **MusicBrainz IDs**: artists are keyed by `mbid`; setlists by `setlistId`; venues by `venueId`; cities by `geoId`. `search_*` tools return these — chain them into the `get_*` tools.
