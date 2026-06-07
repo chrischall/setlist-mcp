@@ -6,6 +6,7 @@ import {
   createApiClient,
   type ApiClient,
 } from '@chrischall/mcp-utils';
+import { withIsoEventDates } from './dates.js';
 
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
@@ -91,11 +92,13 @@ export class SetlistClient {
     opts: { query?: Query; body?: unknown } = {},
   ): Promise<T> {
     const apiKey = this.requireKey();
-    return this.api.fetchJson<T>(method, path, {
+    const data = await this.api.fetchJson<T>(method, path, {
       headers: { 'x-api-key': apiKey },
       ...(opts.query !== undefined ? { query: opts.query } : {}),
       ...(opts.body !== undefined ? { body: opts.body } : {}),
     });
+    // Surface every date as ISO yyyy-MM-dd (the API returns eventDate as dd-MM-yyyy).
+    return withIsoEventDates(data);
   }
 }
 

@@ -73,6 +73,19 @@ describe('SetlistClient', () => {
     expect(calls[0].init.headers['Accept-Language']).toBe('de');
   });
 
+  it('rewrites eventDate in responses from dd-MM-yyyy to ISO yyyy-MM-dd', async () => {
+    process.env.SETLIST_API_KEY = 'k';
+    stubFetch({ setlist: [{ id: 'abc', eventDate: '28-08-2025' }] });
+    const c = new SetlistClient();
+
+    const data = await c.request<{ setlist: { eventDate: string }[] }>(
+      'GET',
+      '/1.0/search/setlists',
+    );
+
+    expect(data.setlist[0].eventDate).toBe('2025-08-28');
+  });
+
   it('times out a hung request with a clear, actionable error', async () => {
     process.env.SETLIST_API_KEY = 'k';
     vi.useFakeTimers();

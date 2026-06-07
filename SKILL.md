@@ -72,7 +72,7 @@ All tools are read-only and prefixed `setlist_`.
 - **`setlist_get_artist_setlists`** — an artist's setlists (most recent first), by `mbid`, paginated via `p`.
 
 ### Setlists
-- **`setlist_search_setlists`** — search by any mix of artist, venue, city, country, tour, `date` (dd-MM-yyyy), or `year`.
+- **`setlist_search_setlists`** — search by any mix of artist, venue, city, country, tour, `date` (ISO yyyy-MM-dd), or `year`.
 - **`setlist_get_setlist`** — a setlist (with full song list) by `setlistId`.
 - **`setlist_get_setlist_version`** — a specific historical version by `versionId`.
 
@@ -98,7 +98,7 @@ All tools are read-only and prefixed `setlist_`.
 
 - **"What did Radiohead play at their last show?"** → `setlist_search_artists` (Radiohead → mbid) → `setlist_get_artist_setlists` (latest) → `setlist_get_setlist` for the song list.
 - **"Setlists at Red Rocks in 2023"** → `setlist_search_venues` (Red Rocks → venueId) → `setlist_search_setlists` with `venueId` + `year: 2023`.
-- **"Phish on 2023-08-07"** → `setlist_search_setlists` with `artistName: "Phish"`, `date: "07-08-2023"` (note the dd-MM-yyyy format).
+- **"Phish on 2023-08-07"** → `setlist_search_setlists` with `artistName: "Phish"`, `date: "2023-08-07"`.
 
 ## Attribution & API terms
 
@@ -117,6 +117,6 @@ setlist.fm's [API terms](https://www.setlist.fm/help/api-terms) bind anyone usin
 ## Notes
 
 - IDs chain: `search_*` tools return the `mbid` / `setlistId` / `venueId` / `geoId` you feed into the `get_*` tools.
-- `date` filters use **dd-MM-yyyy** (e.g. `07-08-2023` = 7 August 2023).
+- **All dates are ISO `yyyy-MM-dd`** — both the `date`/`lastUpdated` inputs and every `eventDate` in the output. (The server translates to/from setlist.fm's native `dd-MM-yyyy` internally.)
 - Results are paginated; pass `p` (1-based) to page through large result sets.
 - setlist.fm rate-limits the standard tier (~2 req/sec); a 429 is retried once.
