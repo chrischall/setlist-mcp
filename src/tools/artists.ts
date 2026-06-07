@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
+import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const page = z
   .number()
@@ -15,7 +16,8 @@ export function registerArtistTools(server: McpServer): void {
     'setlist_search_artists',
     {
       description:
-        "Search setlist.fm for artists by name or MusicBrainz ID. Returns matching artists with their MusicBrainz ID (mbid) — use that mbid with setlist_get_artist or setlist_get_artist_setlists.",
+        "Search setlist.fm for artists by name or MusicBrainz ID. Returns matching artists with their MusicBrainz ID (mbid) — use that mbid with setlist_get_artist or setlist_get_artist_setlists." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         artistName: z.string().optional().describe('Artist name to search for'),
@@ -38,7 +40,7 @@ export function registerArtistTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_artist',
     {
-      description: "Get a setlist.fm artist by their MusicBrainz ID (mbid).",
+      description: "Get a setlist.fm artist by their MusicBrainz ID (mbid)." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),
@@ -54,7 +56,8 @@ export function registerArtistTools(server: McpServer): void {
     'setlist_get_artist_setlists',
     {
       description:
-        "Get an artist's setlists (most recent first) by their MusicBrainz ID (mbid). Paginated via `p`.",
+        "Get an artist's setlists (most recent first) by their MusicBrainz ID (mbid). Paginated via `p`." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),

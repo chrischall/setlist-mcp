@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
+import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const page = z
   .number()
@@ -14,7 +15,9 @@ export function registerUserTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_user',
     {
-      description: "Get a setlist.fm user's public profile by their userId (their setlist.fm username).",
+      description:
+        "Get a setlist.fm user's public profile by their userId (their setlist.fm username)." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         userId: z.string().describe('setlist.fm userId (username)'),
@@ -29,7 +32,9 @@ export function registerUserTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_user_attended',
     {
-      description: "Get the concerts a setlist.fm user has marked as attended. Paginated via `p`.",
+      description:
+        "Get the concerts a setlist.fm user has marked as attended. Paginated via `p`." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         userId: z.string().describe('setlist.fm userId (username)'),
@@ -49,7 +54,9 @@ export function registerUserTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_user_edited',
     {
-      description: "Get the setlists a setlist.fm user has created or edited. Paginated via `p`.",
+      description:
+        "Get the setlists a setlist.fm user has created or edited. Paginated via `p`." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         userId: z.string().describe('setlist.fm userId (username)'),
