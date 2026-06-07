@@ -3,7 +3,7 @@
   "manifest_version": "0.3",
   "name": "setlist-mcp",
   "display_name": "setlist.fm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "setlist.fm concert data for Claude — search setlists, artists, venues, tours, and cities via natural language",
   "author": {
     "name": "Chris Chall",
@@ -55,22 +55,70 @@
     }
   },
   "tools": [
-    { "name": "setlist_search_artists", "description": "Search for artists by name or MusicBrainz ID" },
-    { "name": "setlist_get_artist", "description": "Get an artist by MusicBrainz ID" },
-    { "name": "setlist_get_artist_setlists", "description": "Get an artist's setlists" },
-    { "name": "setlist_search_setlists", "description": "Search setlists by artist, venue, city, date, tour, and more" },
-    { "name": "setlist_get_setlist", "description": "Get a setlist by its ID" },
-    { "name": "setlist_get_setlist_version", "description": "Get a specific version of a setlist" },
-    { "name": "setlist_search_venues", "description": "Search for venues by name or location" },
-    { "name": "setlist_get_venue", "description": "Get a venue by its ID" },
-    { "name": "setlist_get_venue_setlists", "description": "Get setlists performed at a venue" },
-    { "name": "setlist_search_cities", "description": "Search for cities by name or location" },
-    { "name": "setlist_get_city", "description": "Get a city by its geoId" },
-    { "name": "setlist_search_countries", "description": "List all supported countries" },
-    { "name": "setlist_get_user", "description": "Get a setlist.fm user by userId" },
-    { "name": "setlist_get_user_attended", "description": "Get the concerts a user marked as attended" },
-    { "name": "setlist_get_user_edited", "description": "Get the setlists a user has edited" },
-    { "name": "setlist_healthcheck", "description": "Verify the API key works against the setlist.fm API" }
+    {
+      "name": "setlist_search_artists",
+      "description": "Search for artists by name or MusicBrainz ID"
+    },
+    {
+      "name": "setlist_get_artist",
+      "description": "Get an artist by MusicBrainz ID"
+    },
+    {
+      "name": "setlist_get_artist_setlists",
+      "description": "Get an artist's setlists"
+    },
+    {
+      "name": "setlist_search_setlists",
+      "description": "Search setlists by artist, venue, city, date, tour, and more"
+    },
+    {
+      "name": "setlist_get_setlist",
+      "description": "Get a setlist by its ID"
+    },
+    {
+      "name": "setlist_get_setlist_version",
+      "description": "Get a specific version of a setlist"
+    },
+    {
+      "name": "setlist_search_venues",
+      "description": "Search for venues by name or location"
+    },
+    {
+      "name": "setlist_get_venue",
+      "description": "Get a venue by its ID"
+    },
+    {
+      "name": "setlist_get_venue_setlists",
+      "description": "Get setlists performed at a venue"
+    },
+    {
+      "name": "setlist_search_cities",
+      "description": "Search for cities by name or location"
+    },
+    {
+      "name": "setlist_get_city",
+      "description": "Get a city by its geoId"
+    },
+    {
+      "name": "setlist_search_countries",
+      "description": "List all supported countries"
+    },
+    {
+      "name": "setlist_get_user",
+      "description": "Get a setlist.fm user by userId"
+    },
+    {
+      "name": "setlist_get_user_attended",
+      "description": "Get the concerts a user marked as attended"
+    },
+    {
+      "name": "setlist_get_user_edited",
+      "description": "Get the setlists a user has edited"
+    },
+    {
+      "name": "setlist_healthcheck",
+      "description": "Verify the API key works against the setlist.fm API"
+    }
   ],
   "compatibility": {
     "platforms": [
