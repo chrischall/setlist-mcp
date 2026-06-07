@@ -29,6 +29,7 @@ describe('SetlistClient', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
     delete process.env.SETLIST_API_KEY;
     delete process.env.SETLIST_ACCEPT_LANGUAGE;
   });
@@ -70,6 +71,27 @@ describe('SetlistClient', () => {
     await c.request('GET', '/1.0/search/countries');
 
     expect(calls[0].init.headers['Accept-Language']).toBe('de');
+  });
+
+  it('times out a hung request with a clear, actionable error', async () => {
+    process.env.SETLIST_API_KEY = 'k';
+    vi.useFakeTimers();
+    // A fetch that never resolves until its AbortSignal fires.
+    vi.stubGlobal('fetch', (_url: string, init: { signal: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
+        init.signal.addEventListener('abort', () => {
+          const e = new Error('aborted');
+          (e as { name: string }).name = 'AbortError';
+          reject(e);
+        });
+      }),
+    );
+    const c = new SetlistClient();
+
+    const p = c.request('GET', '/1.0/search/countries');
+    const assertion = expect(p).rejects.toThrow(/timed out/i);
+    await vi.advanceTimersByTimeAsync(60_000); // fire the timeout regardless of its exact value
+    await assertion;
   });
 
   it('defers the config error — constructs without a key, throws on first request', async () => {

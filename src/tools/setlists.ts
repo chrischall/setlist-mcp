@@ -9,6 +9,15 @@ import { ATTRIBUTION_NOTE } from '../attribution.js';
 const SETLIST_SHAPE_NOTE =
   ' A setlist\'s songs live in `sets.set[]`; each set may have an `encore` number (1 = first encore) and a `name` (e.g. an acoustic set or a full album). Each `song` may carry: `tape: true` (pre-recorded intro/outro/interlude — not actually performed), `cover` (the original artist when it is a cover), `with` (a guest performer), and `info` (a note like "acoustic" or "first time live").';
 
+// The API wants dates as dd-MM-yyyy and 400s on anything else. Accept an
+// unambiguous ISO date (YYYY-MM-DD) too and convert it, since that's the format
+// a model most often reaches for; pass anything else through for the API to
+// validate (its 400 message names the expected format).
+function normalizeEventDate(date: string): string {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+  return iso ? `${iso[3]}-${iso[2]}-${iso[1]}` : date.trim();
+}
+
 const page = z
   .number()
   .int()
@@ -35,7 +44,10 @@ export function registerSetlistTools(server: McpServer): void {
         stateCode: z.string().optional().describe('State code'),
         countryCode: z.string().optional().describe('Country code (ISO 3166-1 alpha-2)'),
         tourName: z.string().optional().describe('Tour name'),
-        date: z.string().optional().describe('Event date in dd-MM-yyyy format (e.g. 07-08-2023)'),
+        date: z
+          .string()
+          .optional()
+          .describe('Event date — accepts ISO YYYY-MM-DD (e.g. 2025-08-28) or the API\'s dd-MM-yyyy (e.g. 28-08-2025)'),
         year: z.number().int().optional().describe('Event year'),
         lastUpdated: z
           .string()
@@ -45,7 +57,8 @@ export function registerSetlistTools(server: McpServer): void {
       },
     },
     async (args) => {
-      const data = await client.request('GET', '/1.0/search/setlists', { query: args });
+      const query = args.date ? { ...args, date: normalizeEventDate(args.date) } : args;
+      const data = await client.request('GET', '/1.0/search/setlists', { query });
       return textResult(data);
     },
   );
