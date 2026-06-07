@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
+import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const page = z
   .number()
@@ -15,7 +16,8 @@ export function registerVenueTools(server: McpServer): void {
     'setlist_search_venues',
     {
       description:
-        "Search setlist.fm for venues by name and/or location. Returns matching venues with their venue ID — use it with setlist_get_venue or setlist_get_venue_setlists.",
+        "Search setlist.fm for venues by name and/or location. Returns matching venues with their venue ID — use it with setlist_get_venue or setlist_get_venue_setlists." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         name: z.string().optional().describe('Venue name'),
@@ -36,7 +38,7 @@ export function registerVenueTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_venue',
     {
-      description: "Get a setlist.fm venue by its ID.",
+      description: "Get a setlist.fm venue by its ID." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         venueId: z.string().describe('Venue ID'),
@@ -51,7 +53,9 @@ export function registerVenueTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_venue_setlists',
     {
-      description: "Get setlists performed at a venue, by venue ID (most recent first). Paginated via `p`.",
+      description:
+        "Get setlists performed at a venue, by venue ID (most recent first). Paginated via `p`." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         venueId: z.string().describe('Venue ID'),

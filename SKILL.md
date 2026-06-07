@@ -100,6 +100,20 @@ All tools are read-only and prefixed `setlist_`.
 - **"Setlists at Red Rocks in 2023"** → `setlist_search_venues` (Red Rocks → venueId) → `setlist_search_setlists` with `venueId` + `year: 2023`.
 - **"Phish on 2023-08-07"** → `setlist_search_setlists` with `artistName: "Phish"`, `date: "07-08-2023"` (note the dd-MM-yyyy format).
 
+## Attribution & API terms
+
+setlist.fm's [API terms](https://www.setlist.fm/help/api-terms) bind anyone using this data. When you present setlist.fm results to a user:
+
+- **Always cite the source.** Each setlist/artist/venue result includes a `url` — show it as a real, clickable link to setlist.fm (e.g. "Source: [The Beatles setlist on setlist.fm](https://www.setlist.fm/...)"). The terms require a *followable* link — never a `nofollow`. If a particular result has no `url`, link to https://www.setlist.fm instead.
+- **Non-commercial use only.** A free API key covers non-commercial use; commercial use needs setlist.fm's permission.
+- **Live data, not a datastore.** The terms forbid persistent caching — this server fetches fresh on every call and you should treat results as point-in-time, not build a local copy.
+- **Don't expose or share the API key.** It's read from `SETLIST_API_KEY` and never appears in results.
+
+## Interpreting setlist data
+
+- Songs live in `sets.set[]`; each set may have an `encore` number (1 = first encore) and a `name` (e.g. an acoustic set or a full album).
+- Each `song` may carry: `tape: true` (a pre-recorded intro/outro — not actually performed live), `cover` (the original artist when it's a cover), `with` (a guest performer), and `info` (a note like "acoustic" or "first time live"). Surface these when relevant rather than dropping them.
+
 ## Notes
 
 - IDs chain: `search_*` tools return the `mbid` / `setlistId` / `venueId` / `geoId` you feed into the `get_*` tools.

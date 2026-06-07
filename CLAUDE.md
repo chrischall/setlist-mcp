@@ -74,6 +74,16 @@ The MCP Registry caps `server.json`'s `description` at **100 characters** — ov
 
 **Don't merge PRs yourself.** `pr-auto-review.yml` reviews every PR and adds `ready-to-merge` on a `pass` verdict; `auto-merge.yml` then squash-merges once CI is green. Open a PR only when the change is COMPLETE in a single push — auto-merge ships it the moment review passes, and later commits orphan onto a stale branch. Need a checkpoint without shipping? Open it `--draft` (auto-review skips drafts).
 
+## API terms (compliance — don't regress these)
+
+Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). The implementation encodes them:
+
+- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (and that `setlist_healthcheck` is excluded). If you reword the note, keep the `followable attribution` marker or update the test.
+- **No persistent caching.** The terms forbid retaining copies beyond short-lived caching and require live retrieval. The client makes a direct API call per request and keeps no store — **do not add a response cache or local datastore.**
+- **Non-commercial only**; the free key doesn't cover commercial use.
+- **Rate limits.** Standard tier ≈ 2 req/sec; a 429 is retried once after 2s (`client.ts`).
+- **API key** is never logged or returned; `.env` is gitignored.
+
 ## Gotchas
 
 - **ESM + NodeNext**: relative imports use `.js` extensions even from `.ts` source.

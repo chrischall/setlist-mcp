@@ -2,6 +2,12 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
+import { ATTRIBUTION_NOTE } from '../attribution.js';
+
+// How to read a setlist's song data (per setlist.fm's guidelines), so the model
+// renders shows correctly. Appended to the get_setlist descriptions.
+const SETLIST_SHAPE_NOTE =
+  ' A setlist\'s songs live in `sets.set[]`; each set may have an `encore` number (1 = first encore) and a `name` (e.g. an acoustic set or a full album). Each `song` may carry: `tape: true` (pre-recorded intro/outro/interlude — not actually performed), `cover` (the original artist when it is a cover), `with` (a guest performer), and `info` (a note like "acoustic" or "first time live").';
 
 const page = z
   .number()
@@ -15,7 +21,8 @@ export function registerSetlistTools(server: McpServer): void {
     'setlist_search_setlists',
     {
       description:
-        "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year. Returns setlists with their songs and event details. Provide at least one filter.",
+        "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year. Returns setlists with their songs and event details. Provide at least one filter." +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         artistName: z.string().optional().describe('Artist name'),
@@ -46,7 +53,10 @@ export function registerSetlistTools(server: McpServer): void {
   server.registerTool(
     'setlist_get_setlist',
     {
-      description: "Get a setlist.fm setlist by its ID, including the full song list and event details.",
+      description:
+        "Get a setlist.fm setlist by its ID, including the full song list and event details." +
+        SETLIST_SHAPE_NOTE +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         setlistId: z.string().describe('Setlist ID (e.g. 63de4613)'),
@@ -62,7 +72,9 @@ export function registerSetlistTools(server: McpServer): void {
     'setlist_get_setlist_version',
     {
       description:
-        "Get a specific historical version of a setlist by its version ID. Setlists are wiki-edited; each edit has a version ID returned in a setlist's `versionId` field.",
+        "Get a specific historical version of a setlist by its version ID. Setlists are wiki-edited; each edit has a version ID returned in a setlist's `versionId` field." +
+        SETLIST_SHAPE_NOTE +
+        ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
         versionId: z.string().describe('Setlist version ID'),

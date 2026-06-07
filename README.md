@@ -42,6 +42,15 @@ Optional: `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`) lo
 
 See [SKILL.md](SKILL.md) for from-source setup, the full tool reference, and example flows.
 
+## Attribution & terms
+
+Use is governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). In short:
+
+- **Attribute setlist.fm.** Every result carries a `url`; surface it as a *followable* source link (no `nofollow`) wherever the data is shown. The tool descriptions instruct the model to do this, and results pass the `url` through verbatim.
+- **Non-commercial only** under a free key — commercial use requires setlist.fm's permission.
+- **No persistent caching** — this server makes a live API call per tool invocation and keeps no datastore. Please don't add one.
+- **Keep your API key private** — it lives in `SETLIST_API_KEY` (`.env` is gitignored) and never appears in tool output.
+
 ## Development
 
 ```bash
