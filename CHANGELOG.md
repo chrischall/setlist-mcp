@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/chrischall/setlist-mcp/compare/v0.3.0...v0.4.0) (2026-06-07)
+
+
+### Features
+
+* use ISO yyyy-MM-dd for all dates on the MCP surface ([#7](https://github.com/chrischall/setlist-mcp/issues/7)) ([49ad64a](https://github.com/chrischall/setlist-mcp/commit/49ad64a51e0f2955581a402ffbad2663d063ce53))
+
+
+### Bug Fixes
+
+* accept ISO dates in search_setlists and bound requests with a timeout ([#5](https://github.com/chrischall/setlist-mcp/issues/5)) ([2f9f86e](https://github.com/chrischall/setlist-mcp/commit/2f9f86e1101d26592a0ceff974e9783aa63322ba))
+
+
+### Refactor
+
+* source date and timeout helpers from @chrischall/mcp-utils ([#8](https://github.com/chrischall/setlist-mcp/issues/8)) ([182d6fb](https://github.com/chrischall/setlist-mcp/commit/182d6fbacee424cfcf9a2d55dce375082e3f46f8))
+
 ## [0.3.0](https://github.com/chrischall/setlist-mcp/compare/v0.2.0...v0.3.0) (2026-06-07)
 
 
