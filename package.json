@@ -1,0 +1,57 @@
+{
+  "name": "setlist-mcp",
+  "version": "0.1.0",
+  "mcpName": "io.github.chrischall/setlist-mcp",
+  "description": "setlist.fm MCP server for Claude — developed and maintained by AI (Claude Code)",
+  "author": "Claude Code (AI) <https://www.anthropic.com/claude>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrischall/setlist-mcp.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai",
+    "setlist.fm",
+    "setlists",
+    "concerts",
+    "live-music",
+    "gigs",
+    "tours",
+    "musicbrainz"
+  ],
+  "type": "module",
+  "bin": {
+    "setlist-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    ".claude-plugin",
+    "SKILL.md",
+    ".mcp.json",
+    "server.json"
+  ],
+  "scripts": {
+    "build": "tsc && npm run bundle",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --format=esm --external:dotenv --outfile=dist/bundle.js",
+    "dev": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@chrischall/mcp-utils": "^0.5.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^17.4.0",
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}
