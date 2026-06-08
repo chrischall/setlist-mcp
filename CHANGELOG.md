@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/chrischall/setlist-mcp/compare/v0.5.0...v0.5.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* pace resolve_concerts upstream calls and budget-bound the batch (Bug 6) ([#12](https://github.com/chrischall/setlist-mcp/issues/12)) ([e748da5](https://github.com/chrischall/setlist-mcp/commit/e748da52b987f7590645921f11244a2e67d09c2b))
+
 ## [0.5.0](https://github.com/chrischall/setlist-mcp/compare/v0.4.0...v0.5.0) (2026-06-08)
 
 
