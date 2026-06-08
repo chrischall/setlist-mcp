@@ -21,7 +21,7 @@ export function registerSetlistTools(server: McpServer): void {
     'setlist_search_setlists',
     {
       description:
-        "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year. Returns setlists with their songs and event details. Provide at least one filter." +
+        "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year (provide at least one). Combine filters to disambiguate — artistName + date can span multiple cities, so add cityName/cityId or venueName/venueId to pin the exact show. Omit the artist and pass venueName/venueId + date to list EVERY performer at a venue or festival that day. Every result includes songCount, setCount, and hasSongs, so you can skip empty 'stub' setlists (hasSongs: false) without a second fetch." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {

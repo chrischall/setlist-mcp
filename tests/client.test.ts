@@ -86,6 +86,25 @@ describe('SetlistClient', () => {
     expect(data.setlist[0].eventDate).toBe('2025-08-28');
   });
 
+  it('annotates setlists with songCount/setCount/hasSongs', async () => {
+    process.env.SETLIST_API_KEY = 'k';
+    stubFetch({
+      setlist: [
+        { id: 'a', eventDate: '28-08-2025', sets: { set: [{ song: [{ name: 's1' }, { name: 's2' }] }] } },
+        { id: 'stub', eventDate: '01-01-2025', sets: { set: [] } },
+      ],
+    });
+    const c = new SetlistClient();
+
+    const data = await c.request<{ setlist: { hasSongs: boolean; songCount: number }[] }>(
+      'GET',
+      '/1.0/search/setlists',
+    );
+
+    expect(data.setlist[0]).toMatchObject({ songCount: 2, setCount: 1, hasSongs: true });
+    expect(data.setlist[1]).toMatchObject({ songCount: 0, setCount: 0, hasSongs: false });
+  });
+
   it('times out a hung request with a clear, actionable error', async () => {
     process.env.SETLIST_API_KEY = 'k';
     vi.useFakeTimers();

@@ -8,6 +8,7 @@ import {
   dmyToIso,
   type ApiClient,
 } from '@chrischall/mcp-utils';
+import { augmentSetlists } from './augment.js';
 
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
@@ -80,8 +81,9 @@ export class SetlistClient {
       ...(opts.query !== undefined ? { query: opts.query } : {}),
       ...(opts.body !== undefined ? { body: opts.body } : {}),
     });
-    // Surface every date as ISO yyyy-MM-dd (the API returns eventDate as dd-MM-yyyy).
-    return deepMapStringField(data, 'eventDate', dmyToIso);
+    // Surface every date as ISO yyyy-MM-dd (the API returns eventDate as dd-MM-yyyy),
+    // and annotate setlists with songCount/setCount/hasSongs so stubs are visible.
+    return augmentSetlists(deepMapStringField(data, 'eventDate', dmyToIso));
   }
 }
 

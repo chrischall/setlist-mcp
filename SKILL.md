@@ -116,6 +116,9 @@ setlist.fm's [API terms](https://www.setlist.fm/help/api-terms) bind anyone usin
 
 ## Notes
 
+- **Stub setlists:** every setlist result carries `songCount` / `setCount` / `hasSongs`. A page can exist with no songs logged (`hasSongs: false`) — skip those without a second `get_setlist` call.
+- **Disambiguate by location:** `artistName` + `date` can return shows in multiple cities. Add `cityName`/`cityId` or `venueName`/`venueId` to pin the right one (e.g. TSO on a date plays both Charlotte and Orlando).
+- **All performers at a venue/festival on a day:** call `setlist_search_setlists` with `venueName` (or `venueId`) + `date` and **no** artist.
 - IDs chain: `search_*` tools return the `mbid` / `setlistId` / `venueId` / `geoId` you feed into the `get_*` tools.
 - **All dates are ISO `yyyy-MM-dd`** — both the `date`/`lastUpdated` inputs and every `eventDate` in the output. (The server translates to/from setlist.fm's native `dd-MM-yyyy` internally.)
 - Results are paginated; pass `p` (1-based) to page through large result sets.
