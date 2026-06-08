@@ -116,6 +116,10 @@
       "description": "Get the setlists a user has edited"
     },
     {
+      "name": "setlist_resolve_concerts",
+      "description": "Batch-resolve up to 24 {artist, date, city?, venue?} to their best-match setlists"
+    },
+    {
       "name": "setlist_healthcheck",
       "description": "Verify the API key works against the setlist.fm API"
     }

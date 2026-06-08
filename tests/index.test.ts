@@ -4,6 +4,7 @@ import { registerSetlistTools } from '../src/tools/setlists.js';
 import { registerVenueTools } from '../src/tools/venues.js';
 import { registerGeoTools } from '../src/tools/geo.js';
 import { registerUserTools } from '../src/tools/users.js';
+import { registerResolveTools } from '../src/tools/resolve.js';
 import { registerUtilityTools } from '../src/tools/utilities.js';
 import { createTestHarness } from './helpers.js';
 
@@ -16,13 +17,14 @@ describe('tool registry', () => {
     if (harness) await harness.close();
   });
 
-  it('includes all 16 expected tools', async () => {
+  it('includes all 17 expected tools', async () => {
     harness = await createTestHarness((server) => {
       registerArtistTools(server);
       registerSetlistTools(server);
       registerVenueTools(server);
       registerGeoTools(server);
       registerUserTools(server);
+      registerResolveTools(server);
       registerUtilityTools(server);
     });
 
@@ -45,10 +47,11 @@ describe('tool registry', () => {
       'setlist_get_user',
       'setlist_get_user_attended',
       'setlist_get_user_edited',
+      'setlist_resolve_concerts',
       'setlist_healthcheck',
     ].sort();
 
     expect(allNames).toEqual(expected);
-    expect(tools).toHaveLength(16);
+    expect(tools).toHaveLength(17);
   });
 });
