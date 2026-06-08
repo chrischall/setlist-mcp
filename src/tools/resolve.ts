@@ -168,6 +168,9 @@ async function findTourReference(
   const query: Query = stub.artist?.mbid
     ? { artistMbid: stub.artist.mbid, tourName: tour }
     : { artistName: stub.artist?.name, tourName: tour };
+  // Without an artist, a tour-name-only search could return a different act on a
+  // same-named tour — don't guess.
+  if (!query.artistMbid && !query.artistName) return undefined;
   const candidates = (await searchSetlists(req, query)).filter(
     (s) => s.id !== stub.id && songCountOf(s) > 0,
   );
@@ -176,10 +179,11 @@ async function findTourReference(
   // relative to the tour's best-documented show (≥60%), so we don't surface
   // another thin/partial entry just because it's the nearest date. Among those,
   // pick the date closest to the target show.
+  // The best-documented night always passes its own threshold, so `substantial`
+  // is non-empty whenever `candidates` is.
   const maxSongs = Math.max(...candidates.map(songCountOf));
   const substantial = candidates.filter((s) => songCountOf(s) >= Math.max(1, maxSongs * 0.6));
-  const pool = substantial.length > 0 ? substantial : candidates;
-  const ref = [...pool].sort(
+  const ref = [...substantial].sort(
     (a, b) => daysApart(a.eventDate, targetDate) - daysApart(b.eventDate, targetDate) || songCountOf(b) - songCountOf(a),
   )[0];
   return {

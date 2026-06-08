@@ -133,6 +133,16 @@ describe('resolveConcerts (core)', () => {
     expect(b.tourReference).toBeUndefined();
   });
 
+  it('does not run a tour search for a stub with no artist info', async () => {
+    const noArtist = setlist({ sets: { set: [] }, tour: { name: 'T' }, artist: undefined });
+    const request = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) =>
+      p === '/1.0/search/setlists' && !(o?.query ?? {}).tourName ? { setlist: [noArtist] } : { setlist: [] },
+    );
+    const [r] = await resolveConcerts([{ artist: 'X', date: '2024-01-01' }], fast(request));
+    expect(r.tourReference).toBeUndefined();
+    expect(request.mock.calls.some((c) => (c[2] as { query?: Record<string, unknown> })?.query?.tourName)).toBe(false);
+  });
+
   it('skips the tour lookup entirely when tourFallback is false', async () => {
     const stub = setlist({ sets: { set: [] }, tour: { name: 'T' } });
     const request = vi.fn(async () => ({ setlist: [stub] }));
