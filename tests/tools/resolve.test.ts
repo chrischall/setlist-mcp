@@ -77,6 +77,83 @@ describe('resolveConcerts (core)', () => {
     expect(r.match).toBeNull();
   });
 
+  it('offers a same-tour reference for an empty stub, picking the closest populated date', async () => {
+    const stub = setlist({ id: 'stub1', sets: { set: [] }, tour: { name: 'The Tour' }, artist: { name: 'Dan + Shay', mbid: 'MB' } });
+    const far = setlist({ id: 'r1', eventDate: '2024-09-21', venue: { name: 'Fiddlers', city: { name: 'Denver' } }, sets: { set: [{ song: [{ name: 'A' }, { name: 'B' }] }] } });
+    const near = setlist({ id: 'r2', eventDate: '2024-08-20', venue: { name: 'Nearby', city: { name: 'Atlanta' } }, sets: { set: [{ song: [{ name: 'A' }, { name: 'B' }, { name: 'C' }] }] } });
+    const request = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) => {
+      const q = o?.query ?? {};
+      if (p === '/1.0/search/setlists' && q.tourName) return { setlist: [far, near] };
+      if (p === '/1.0/search/setlists') return { setlist: [stub] };
+      return {};
+    });
+    const [r] = await resolveConcerts([{ artist: 'Dan + Shay', date: '2024-08-16' }], fast(request));
+    expect(r.match?.hasSongs).toBe(false);
+    expect(r.tourReference).toMatchObject({ tour: 'The Tour', fromDate: '2024-08-20', songCount: 3 });
+    expect(r.tourReference?.songs).toEqual(['A', 'B', 'C']);
+    // The tour lookup used the artist's mbid + tour name.
+    const tourCall = request.mock.calls.find((c) => (c[2] as { query?: Record<string, unknown> })?.query?.tourName);
+    expect((tourCall![2] as { query: Record<string, unknown> }).query).toMatchObject({ artistMbid: 'MB', tourName: 'The Tour' });
+  });
+
+  it('prefers a substantially-complete tour night over a nearer but sparse one', async () => {
+    const stub = setlist({ id: 'stub1', sets: { set: [] }, tour: { name: 'T' }, artist: { name: 'A', mbid: 'MB' } });
+    const sparseNear = setlist({ id: 'sparse', eventDate: '2024-08-17', sets: { set: [{ song: [{ name: 'x' }, { name: 'y' }] }] } });
+    const fullFar = setlist({
+      id: 'full',
+      eventDate: '2024-08-30',
+      sets: { set: [{ song: Array.from({ length: 20 }, (_, i) => ({ name: `s${i}` })) }] },
+    });
+    const request = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) => {
+      const q = o?.query ?? {};
+      if (p === '/1.0/search/setlists' && q.tourName) return { setlist: [sparseNear, fullFar] };
+      if (p === '/1.0/search/setlists') return { setlist: [stub] };
+      return {};
+    });
+    const [r] = await resolveConcerts([{ artist: 'A', date: '2024-08-16' }], fast(request));
+    // sparseNear (2 songs) is the nearest date, but fullFar (20) is representative.
+    expect(r.tourReference).toMatchObject({ fromDate: '2024-08-30', songCount: 20 });
+  });
+
+  it('adds no tour reference when the stub has no tour or no other populated date', async () => {
+    const noTour = setlist({ sets: { set: [] }, tour: undefined });
+    const req1 = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) =>
+      p === '/1.0/search/setlists' && !(o?.query ?? {}).tourName ? { setlist: [noTour] } : { setlist: [] },
+    );
+    const [a] = await resolveConcerts([{ artist: 'X', date: '2024-01-01' }], fast(req1));
+    expect(a.tourReference).toBeUndefined();
+    expect(req1.mock.calls.some((c) => (c[2] as { query?: Record<string, unknown> })?.query?.tourName)).toBe(false);
+
+    // Has a tour, but the tour search returns no other populated date.
+    const stub = setlist({ sets: { set: [] }, tour: { name: 'T' } });
+    const req2 = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) =>
+      p === '/1.0/search/setlists' && (o?.query ?? {}).tourName ? { setlist: [] } : { setlist: [stub] },
+    );
+    const [b] = await resolveConcerts([{ artist: 'X', date: '2024-01-01' }], fast(req2));
+    expect(b.tourReference).toBeUndefined();
+  });
+
+  it('does not run a tour search for a stub with no artist info', async () => {
+    const noArtist = setlist({ sets: { set: [] }, tour: { name: 'T' }, artist: undefined });
+    const request = vi.fn(async (_m: string, p: string, o?: { query?: Record<string, unknown> }) =>
+      p === '/1.0/search/setlists' && !(o?.query ?? {}).tourName ? { setlist: [noArtist] } : { setlist: [] },
+    );
+    const [r] = await resolveConcerts([{ artist: 'X', date: '2024-01-01' }], fast(request));
+    expect(r.tourReference).toBeUndefined();
+    expect(request.mock.calls.some((c) => (c[2] as { query?: Record<string, unknown> })?.query?.tourName)).toBe(false);
+  });
+
+  it('skips the tour lookup entirely when tourFallback is false', async () => {
+    const stub = setlist({ sets: { set: [] }, tour: { name: 'T' } });
+    const request = vi.fn(async () => ({ setlist: [stub] }));
+    const [r] = await resolveConcerts(
+      [{ artist: 'X', date: '2024-01-01' }],
+      { request, sleep: async () => {}, paceMs: 0, tourFallback: false },
+    );
+    expect(r.tourReference).toBeUndefined();
+    expect(request.mock.calls.some((c) => (c[2] as { query?: Record<string, unknown> })?.query?.tourName)).toBe(false);
+  });
+
   it('paces upstream calls ~paceMs apart (does not burst)', async () => {
     const request = vi.fn(async () => ({ setlist: [setlist()] }));
     const sleep = vi.fn(async () => {});
@@ -114,14 +191,19 @@ describe('resolveConcerts (core)', () => {
 });
 
 describe('summarizeResults', () => {
-  it('counts matched/stubs/unmatched/pending and adds a note when work was deferred', () => {
+  it('counts matched/stubs/tourReferenced/unmatched/pending and adds a note when work was deferred', () => {
     const out = summarizeResults([
       { input: { artist: 'A', date: 'd' }, match: { songCount: 5, hasSongs: true }, alternatives: 0 },
-      { input: { artist: 'B', date: 'd' }, match: { songCount: 0, hasSongs: false }, alternatives: 0 },
+      {
+        input: { artist: 'B', date: 'd' },
+        match: { songCount: 0, hasSongs: false },
+        alternatives: 0,
+        tourReference: { note: 'n', tour: 'T', songCount: 3, songs: ['x', 'y', 'z'] },
+      },
       { input: { artist: 'C', date: 'd' }, match: null, alternatives: 0 },
       { input: { artist: 'D', date: 'd' }, match: null, alternatives: 0, pending: true },
     ]);
-    expect(out.summary).toMatchObject({ total: 4, matched: 2, stubs: 1, unmatched: 1, pending: 1 });
+    expect(out.summary).toMatchObject({ total: 4, matched: 2, stubs: 1, tourReferenced: 1, unmatched: 1, pending: 1 });
     expect(String(out.note)).toMatch(/pending/i);
   });
 
