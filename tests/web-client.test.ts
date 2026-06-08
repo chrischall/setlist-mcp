@@ -15,7 +15,11 @@ describe('SetlistWebClient', () => {
     return fn;
   }
   beforeEach(() => { calls = []; });
-  afterEach(() => { vi.unstubAllGlobals(); delete process.env.SETLIST_SESSION_COOKIE; });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.SETLIST_SESSION_COOKIE;
+    delete process.env.SETLIST_DISABLE_FETCHPROXY;
+  });
 
   it('fetchPage sends the session cookie + browser UA against the www base URL', async () => {
     process.env.SETLIST_SESSION_COOKIE = 'JSESSIONID=abc';
@@ -40,8 +44,9 @@ describe('SetlistWebClient', () => {
     expect(h.Cookie).toBe('c=1');
   });
 
-  it('throws a clear config error (no network) when no session is set', async () => {
+  it('throws a clear config error (no network) when no session is set and the bridge is disabled', async () => {
     delete process.env.SETLIST_SESSION_COOKIE;
+    process.env.SETLIST_DISABLE_FETCHPROXY = '1'; // skip the fetchproxy fallback
     const fn = stubFetch();
     const c = new SetlistWebClient();
     await expect(c.fetchPage('/x')).rejects.toThrow(/SETLIST_SESSION_COOKIE|session/i);

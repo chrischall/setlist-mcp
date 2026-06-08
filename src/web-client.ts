@@ -43,13 +43,19 @@ export class SetlistWebClient {
   }
 
   /**
-   * Resolve the session cookie. Env (`SETLIST_SESSION_COOKIE`) is the verified
-   * path today; a fetchproxy `read_cookies` grab from the signed-in tab is a
-   * planned fallback (grabs JSESSIONID / RememberMeCookie / aws-waf-token), to be
-   * wired here once added + verified against the bridge.
+   * Resolve the session cookie: `SETLIST_SESSION_COOKIE` (env) first, else a
+   * one-time fetchproxy `read_cookies` grab from the signed-in tab (lazy-imported
+   * so the env path never loads the bridge), else the deferred config error.
+   * The grabbed cookie is cached on the instance for the process lifetime.
    */
   private async requireCookie(): Promise<string> {
     if (this.cookie) return this.cookie;
+    const { grabSessionCookie } = await import('./fetchproxy-cookie.js');
+    const grabbed = await grabSessionCookie();
+    if (grabbed) {
+      this.cookie = grabbed;
+      return grabbed;
+    }
     throw this.configError;
   }
 
