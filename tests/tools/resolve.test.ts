@@ -86,6 +86,22 @@ describe('setlist_resolve_concerts', () => {
     expect(out.summary.matched).toBe(1);
   });
 
+  it('falls back to a punctuation-normalized artist name when mbid lookup also misses', async () => {
+    mockRequest.mockImplementation(async (_m, p, o) => {
+      const q = (o as { query?: Record<string, unknown> } | undefined)?.query ?? {};
+      if (p === '/1.0/search/artists') return { artist: [] } as never; // no mbid
+      if (p === '/1.0/search/setlists' && q.artistName === 'Weird Al Yankovic') {
+        return { setlist: [setlist()] } as never; // normalized name hits
+      }
+      return { setlist: [] } as never; // raw quoted name misses
+    });
+    const out = parse(await harness.callTool('setlist_resolve_concerts', {
+      concerts: [{ artist: '"Weird Al" Yankovic', date: '2025-08-28' }],
+    }));
+    expect(out.results[0].match?.setlistId).toBe('s1');
+    expect(out.summary.matched).toBe(1);
+  });
+
   it('treats a 404 (no results) as unmatched, not an error', async () => {
     // Reject lazily via mockImplementationOnce (the one form that doesn't trip
     // vitest's settled-result tracking under beforeEach(mockClear)); the rest of
