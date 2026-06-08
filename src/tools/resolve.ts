@@ -22,16 +22,32 @@ export interface ResolveDeps {
   now?: () => number;
   paceMs?: number;
   budgetMs?: number;
+  /** Offer a same-tour reference setlist for empty stubs (default true). */
+  tourFallback?: boolean;
 }
 
 interface RawSetlist {
   id?: string;
   url?: string;
   eventDate?: string;
-  artist?: { name?: string };
+  artist?: { name?: string; mbid?: string };
   venue?: { name?: string; city?: { name?: string } };
   tour?: { name?: string };
-  sets?: { set?: { song?: unknown[] }[] };
+  sets?: { set?: { song?: { name?: string }[] }[] };
+}
+
+// A populated setlist from elsewhere on the same tour, offered when this show is
+// an empty stub. Clearly NOT this exact show — labeled with its real source date.
+interface TourReference {
+  note: string;
+  tour: string;
+  fromDate?: string;
+  fromVenue?: string;
+  fromCity?: string;
+  setlistId?: string;
+  url?: string;
+  songCount: number;
+  songs: string[];
 }
 
 interface Concert {
@@ -44,6 +60,25 @@ interface Concert {
 function songCountOf(s: RawSetlist): number {
   const sets = Array.isArray(s.sets?.set) ? s.sets!.set! : [];
   return sets.reduce((n, set) => n + (Array.isArray(set?.song) ? set.song.length : 0), 0);
+}
+
+function songNamesOf(s: RawSetlist): string[] {
+  const sets = Array.isArray(s.sets?.set) ? s.sets!.set! : [];
+  const names: string[] = [];
+  for (const set of sets) {
+    for (const song of Array.isArray(set?.song) ? set.song : []) {
+      if (typeof song?.name === 'string') names.push(song.name);
+    }
+  }
+  return names;
+}
+
+// Absolute day distance between two ISO dates; Infinity if either is unparseable.
+function daysApart(isoA?: string, isoB?: string): number {
+  const a = isoA ? Date.parse(isoA) : NaN;
+  const b = isoB ? Date.parse(isoB) : NaN;
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.POSITIVE_INFINITY;
+  return Math.abs(a - b) / 86_400_000;
 }
 
 // Loosen punctuation/format variants for a fuzzy retry: drop quotes, turn + / &
@@ -115,10 +150,52 @@ interface ResolveResult {
     hasSongs: boolean;
   } | null;
   alternatives: number;
+  tourReference?: TourReference;
   pending?: boolean;
 }
 
-async function resolveOne(req: RequestFn, c: Concert): Promise<ResolveResult> {
+// When a show is an empty stub but the act toured a repeating set, find a
+// populated setlist from the SAME tour (setlist.fm only) to offer as a labeled
+// reference. Picks the populated date closest to the show. Returns undefined if
+// the stub has no tour or no other populated tour date exists.
+async function findTourReference(
+  req: RequestFn,
+  stub: RawSetlist,
+  targetDate: string,
+): Promise<TourReference | undefined> {
+  const tour = stub.tour?.name;
+  if (!tour) return undefined;
+  const query: Query = stub.artist?.mbid
+    ? { artistMbid: stub.artist.mbid, tourName: tour }
+    : { artistName: stub.artist?.name, tourName: tour };
+  const candidates = (await searchSetlists(req, query)).filter(
+    (s) => s.id !== stub.id && songCountOf(s) > 0,
+  );
+  if (candidates.length === 0) return undefined;
+  // Prefer a *representative* night: a setlist that's substantially complete
+  // relative to the tour's best-documented show (≥60%), so we don't surface
+  // another thin/partial entry just because it's the nearest date. Among those,
+  // pick the date closest to the target show.
+  const maxSongs = Math.max(...candidates.map(songCountOf));
+  const substantial = candidates.filter((s) => songCountOf(s) >= Math.max(1, maxSongs * 0.6));
+  const pool = substantial.length > 0 ? substantial : candidates;
+  const ref = [...pool].sort(
+    (a, b) => daysApart(a.eventDate, targetDate) - daysApart(b.eventDate, targetDate) || songCountOf(b) - songCountOf(a),
+  )[0];
+  return {
+    note: `No songs are logged for this show on setlist.fm. This is the typical set for the "${tour}" tour, from a different date — verify before treating it as this exact show's setlist.`,
+    tour,
+    fromDate: ref.eventDate,
+    fromVenue: ref.venue?.name,
+    fromCity: ref.venue?.city?.name,
+    setlistId: ref.id,
+    url: ref.url,
+    songCount: songCountOf(ref),
+    songs: songNamesOf(ref),
+  };
+}
+
+async function resolveOne(req: RequestFn, c: Concert, tourFallback: boolean): Promise<ResolveResult> {
   const filters: Query = {
     date: isoToDmy(c.date),
     ...(c.city ? { cityName: c.city } : {}),
@@ -145,7 +222,7 @@ async function resolveOne(req: RequestFn, c: Concert): Promise<ResolveResult> {
   if (!best) return { input: c, match: null, alternatives: 0 };
 
   const songCount = songCountOf(best);
-  return {
+  const result: ResolveResult = {
     input: c,
     match: {
       setlistId: best.id,
@@ -160,6 +237,12 @@ async function resolveOne(req: RequestFn, c: Concert): Promise<ResolveResult> {
     },
     alternatives: list.length - 1,
   };
+  // Empty stub: try to offer the tour's typical (populated) setlist as a labeled reference.
+  if (songCount === 0 && tourFallback) {
+    const ref = await findTourReference(req, best, c.date);
+    if (ref) result.tourReference = ref;
+  }
+  return result;
 }
 
 const defaultSleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -176,6 +259,7 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps = {
   const now = deps.now ?? Date.now;
   const paceMs = deps.paceMs ?? PACE_MS;
   const budgetMs = deps.budgetMs ?? BUDGET_MS;
+  const tourFallback = deps.tourFallback ?? true;
 
   // Gate every upstream call to at least `paceMs` apart (the first runs immediately).
   let lastCallAt = 0;
@@ -195,7 +279,7 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps = {
       results.push({ input: c, match: null, alternatives: 0, pending: true });
       continue;
     }
-    results.push(await resolveOne(req, c));
+    results.push(await resolveOne(req, c, tourFallback));
   }
   return results;
 }
@@ -205,7 +289,15 @@ export function summarizeResults(results: ResolveResult[]): Record<string, unkno
   const pending = results.filter((r) => r.pending).length;
   const matched = results.filter((r) => r.match).length;
   const stubs = results.filter((r) => r.match && !r.match.hasSongs).length;
-  const summary = { total: results.length, matched, stubs, unmatched: results.length - matched - pending, pending };
+  const tourReferenced = results.filter((r) => r.tourReference).length;
+  const summary = {
+    total: results.length,
+    matched,
+    stubs,
+    tourReferenced,
+    unmatched: results.length - matched - pending,
+    pending,
+  };
   const payload: Record<string, unknown> = { results, summary };
   if (pending > 0) {
     payload.note = `Reached the time budget after ${results.length - pending} of ${results.length} concerts. Re-call setlist_resolve_concerts with just the ${pending} pending concert(s).`;
@@ -218,7 +310,7 @@ export function registerResolveTools(server: McpServer): void {
     'setlist_resolve_concerts',
     {
       description:
-        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, unmatched, pending}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page. Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. Keep batches ≤24." +
+        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. Keep batches ≤24." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
@@ -234,10 +326,14 @@ export function registerResolveTools(server: McpServer): void {
           .min(1)
           .max(MAX_BATCH)
           .describe(`Concerts to resolve (1–${MAX_BATCH} per call)`),
+        tourFallback: z
+          .boolean()
+          .optional()
+          .describe('For empty stubs, also fetch a same-tour reference setlist (default true). Set false to skip the extra lookups.'),
       },
     },
-    async ({ concerts }) => {
-      const results = await resolveConcerts(concerts);
+    async ({ concerts, tourFallback }) => {
+      const results = await resolveConcerts(concerts, { tourFallback });
       return textResult(summarizeResults(results));
     },
   );
