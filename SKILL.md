@@ -76,6 +76,9 @@ All tools are read-only and prefixed `setlist_`.
 - **`setlist_get_setlist`** — a setlist (with full song list) by `setlistId`.
 - **`setlist_get_setlist_version`** — a specific historical version by `versionId`.
 
+### Batch
+- **`setlist_resolve_concerts`** — resolve up to **24** `{artist, date, city?, venue?}` to their best-match setlists in one call (with `songCount`/`hasSongs` + a `{matched, stubs, unmatched, pending}` summary). Calls are paced to setlist.fm's rate limit; if a batch can't finish in time the rest come back `pending: true` — re-call with just those. For more than 24 shows, chunk into batches of ≤24.
+
 ### Venues
 - **`setlist_search_venues`** — find venues by `name` and/or location.
 - **`setlist_get_venue`** — get a venue by `venueId`.
