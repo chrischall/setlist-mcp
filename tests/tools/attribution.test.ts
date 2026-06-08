@@ -4,6 +4,7 @@ import { registerSetlistTools } from '../../src/tools/setlists.js';
 import { registerVenueTools } from '../../src/tools/venues.js';
 import { registerGeoTools } from '../../src/tools/geo.js';
 import { registerUserTools } from '../../src/tools/users.js';
+import { registerResolveTools } from '../../src/tools/resolve.js';
 import { registerUtilityTools } from '../../src/tools/utilities.js';
 import { ATTRIBUTION_NOTE } from '../../src/attribution.js';
 import { createTestHarness } from '../helpers.js';
@@ -28,6 +29,7 @@ describe('attribution coverage', () => {
       registerVenueTools(server);
       registerGeoTools(server);
       registerUserTools(server);
+      registerResolveTools(server);
       registerUtilityTools(server);
     });
 
