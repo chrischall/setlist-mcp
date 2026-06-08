@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/chrischall/setlist-mcp/compare/v0.4.0...v0.5.0) (2026-06-08)
+
+
+### Features
+
+* add setlist_resolve_concerts batch resolver (Gaps 2 & 5) ([#11](https://github.com/chrischall/setlist-mcp/issues/11)) ([a9a9eb8](https://github.com/chrischall/setlist-mcp/commit/a9a9eb8c0589c140093d7086e3b977a9f78b6ae8))
+* flag empty stub setlists and surface venue/city + festival filters ([#9](https://github.com/chrischall/setlist-mcp/issues/9)) ([c157388](https://github.com/chrischall/setlist-mcp/commit/c15738826551e3e326ba58a8f9996c21766c691c))
+
 ## [0.4.0](https://github.com/chrischall/setlist-mcp/compare/v0.3.0...v0.4.0) (2026-06-07)
 
 
