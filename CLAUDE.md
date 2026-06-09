@@ -1,6 +1,6 @@
 # setlist-mcp
 
-MCP server for [setlist.fm](https://www.setlist.fm). Wraps the setlist.fm REST API (`https://api.setlist.fm/rest`) and exposes 16 read-only tools to Claude over stdio. setlist.fm has no write API — every tool is a GET.
+MCP server for [setlist.fm](https://www.setlist.fm). Wraps the setlist.fm REST API (`https://api.setlist.fm/rest`) and exposes 20 tools to Claude over stdio: 18 read-only (the REST API has no write endpoints — those are all GETs) plus 2 authenticated "I was there" attendance actions (`setlist_mark_attended` / `setlist_unmark_attended`) performed against the logged-in **website** (Apache Wicket), not the REST API.
 
 ## Commands
 
@@ -37,6 +37,9 @@ src/
     venues.ts     # setlist_search_venues, setlist_get_venue, setlist_get_venue_setlists
     geo.ts        # setlist_search_cities, setlist_get_city, setlist_search_countries
     users.ts      # setlist_get_user, setlist_get_user_attended, setlist_get_user_edited
+    resolve.ts    # setlist_resolve_concerts (batch {artist,date,city?,venue?} → setlist resolver)
+    attendance.ts # setlist_mark_attended, setlist_unmark_attended (authenticated website writes via web-client.ts)
+    urls.ts       # setlist_id_from_url (pure local parser — extracts the setlist ID from a /setlist/ URL)
     utilities.ts  # setlist_healthcheck
 ```
 
@@ -81,7 +84,7 @@ The MCP Registry caps `server.json`'s `description` at **100 characters** — ov
 
 Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). The implementation encodes them:
 
-- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (and that `setlist_healthcheck` is excluded). If you reword the note, keep the `followable attribution` marker or update the test.
+- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (the `NO_DATA_TOOLS` set — `setlist_healthcheck` and `setlist_id_from_url` — must NOT carry the note, as they surface no setlist.fm data). If you reword the note, keep the `followable attribution` marker or update the test.
 - **No persistent caching.** The terms forbid retaining copies beyond short-lived caching and require live retrieval. The client makes a direct API call per request and keeps no store — **do not add a response cache or local datastore.**
 - **Non-commercial only**; the free key doesn't cover commercial use.
 - **Rate limits.** Standard tier ≈ 2 req/sec; a 429 is retried once after 2s (`client.ts`).

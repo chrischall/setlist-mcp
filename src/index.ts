@@ -8,6 +8,7 @@ import { registerGeoTools } from './tools/geo.js';
 import { registerUserTools } from './tools/users.js';
 import { registerResolveTools } from './tools/resolve.js';
 import { registerAttendanceTools } from './tools/attendance.js';
+import { registerUrlTools } from './tools/urls.js';
 import { registerUtilityTools } from './tools/utilities.js';
 
 // The setlist.fm client is a module-level singleton (imported by each tool
@@ -28,6 +29,7 @@ await runMcp({
     registerUserTools,
     registerResolveTools,
     registerAttendanceTools,
+    registerUrlTools,
     registerUtilityTools,
   ],
 });

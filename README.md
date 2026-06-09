@@ -3,13 +3,13 @@
 [![CI](https://github.com/chrischall/setlist-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chrischall/setlist-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/setlist-mcp)](https://www.npmjs.com/package/setlist-mcp)
 
-MCP server for [setlist.fm](https://www.setlist.fm) — search concert setlists, artists, venues, tours, and cities from Claude via natural language. Read-only (setlist.fm exposes no write API).
+MCP server for [setlist.fm](https://www.setlist.fm) — search concert setlists, artists, venues, tours, and cities from Claude via natural language. Mostly read-only (the setlist.fm REST API exposes no write endpoints), plus authenticated "I was there" attendance actions via your logged-in session.
 
 > This project was developed and is maintained by AI (Claude). Use at your own discretion.
 
 ## What it does
 
-Exposes 16 read-only tools over the [setlist.fm REST API](https://api.setlist.fm/docs/1.0/index.html):
+Exposes 20 tools — 18 read-only over the [setlist.fm REST API](https://api.setlist.fm/docs/1.0/index.html), plus 2 authenticated "I was there" attendance actions:
 
 | Area | Tools |
 |------|-------|
@@ -18,7 +18,9 @@ Exposes 16 read-only tools over the [setlist.fm REST API](https://api.setlist.fm
 | Venues | `setlist_search_venues`, `setlist_get_venue`, `setlist_get_venue_setlists` |
 | Cities & countries | `setlist_search_cities`, `setlist_get_city`, `setlist_search_countries` |
 | Users | `setlist_get_user`, `setlist_get_user_attended`, `setlist_get_user_edited` |
-| Utility | `setlist_healthcheck` |
+| Resolve | `setlist_resolve_concerts` |
+| Attendance (authenticated writes) | `setlist_mark_attended`, `setlist_unmark_attended` |
+| Utility | `setlist_healthcheck`, `setlist_id_from_url` |
 
 ## Setup
 

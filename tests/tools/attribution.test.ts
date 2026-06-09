@@ -6,14 +6,18 @@ import { registerGeoTools } from '../../src/tools/geo.js';
 import { registerUserTools } from '../../src/tools/users.js';
 import { registerResolveTools } from '../../src/tools/resolve.js';
 import { registerAttendanceTools } from '../../src/tools/attendance.js';
+import { registerUrlTools } from '../../src/tools/urls.js';
 import { registerUtilityTools } from '../../src/tools/utilities.js';
 import { ATTRIBUTION_NOTE } from '../../src/attribution.js';
 import { createTestHarness } from '../helpers.js';
 
 // setlist.fm's API terms require followable attribution wherever their data is
 // shown. Every tool that returns setlist.fm data must instruct the model to
-// surface the source link; setlist_healthcheck (no data) must not.
+// surface the source link; tools that surface no setlist.fm data must not carry
+// the note: setlist_healthcheck (connectivity probe) and setlist_id_from_url
+// (pure local URL parsing, no API call).
 const MARKER = 'followable attribution';
+const NO_DATA_TOOLS = new Set(['setlist_healthcheck', 'setlist_id_from_url']);
 
 describe('attribution coverage', () => {
   let harness: Awaited<ReturnType<typeof createTestHarness>>;
@@ -32,6 +36,7 @@ describe('attribution coverage', () => {
       registerUserTools(server);
       registerResolveTools(server);
       registerAttendanceTools(server);
+      registerUrlTools(server);
       registerUtilityTools(server);
     });
 
@@ -40,8 +45,8 @@ describe('attribution coverage', () => {
     const { tools } = await harness.client.listTools();
     for (const tool of tools) {
       const hasNote = (tool.description ?? '').includes(MARKER);
-      if (tool.name === 'setlist_healthcheck') {
-        expect(hasNote, 'healthcheck should not carry the attribution note').toBe(false);
+      if (NO_DATA_TOOLS.has(tool.name)) {
+        expect(hasNote, `${tool.name} surfaces no data and should not carry the attribution note`).toBe(false);
       } else {
         expect(hasNote, `${tool.name} is missing the attribution note`).toBe(true);
       }
