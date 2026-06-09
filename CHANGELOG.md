@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/chrischall/setlist-mcp/compare/v0.5.1...v0.6.0) (2026-06-09)
+
+
+### Features
+
+* authenticated "I was there" attendance writes (cookie-session) ([#16](https://github.com/chrischall/setlist-mcp/issues/16)) ([d754561](https://github.com/chrischall/setlist-mcp/commit/d754561b684f642ebbc7fe2a5a88c5ec208b42a3))
+* tour-reference fallback for empty stubs in resolve_concerts ([#14](https://github.com/chrischall/setlist-mcp/issues/14)) ([c3936d8](https://github.com/chrischall/setlist-mcp/commit/c3936d8597ece90f6dc8689fbbab0feac5272037))
+
 ## [0.5.1](https://github.com/chrischall/setlist-mcp/compare/v0.5.0...v0.5.1) (2026-06-08)
 
 
