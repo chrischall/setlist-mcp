@@ -1,6 +1,14 @@
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { loadDotenvSafely, readEnvVar, createApiClient, messageOf, type ApiClient } from '@chrischall/mcp-utils';
+import {
+  loadDotenvSafely,
+  readEnvVar,
+  createApiClient,
+  createThrottle,
+  ApiError,
+  type ApiClient,
+  type Throttle,
+} from '@chrischall/mcp-utils';
 
 // Load .env for local dev (guarded; the mcpb bundle omits dotenv).
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8,9 +16,15 @@ await loadDotenvSafely({ path: join(__dirname, '..', '.env'), override: false })
 
 const RETRY_5XX = 3; // www.setlist.fm intermittently returns 500/502/503 from its gateway
 const RETRY_DELAY_MS = 1200;
+const RETRYABLE_5XX = [500, 502, 503, 504];
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-// Retry transient gateway errors (502/503/504); createApiClient only retries 429.
+// Retry transient gateway errors (500/502/503/504), detected from ApiError's
+// real `.status` — never from the message, so a 404 page whose body happens to
+// mention "503" doesn't trigger retries. Kept as a local helper (rather than
+// the client-level `retry.statuses` option) because the 5xx policy here
+// (3 retries × 1.2s) intentionally differs from the client's 429 policy
+// (1 retry × 2s), and `RetryPolicy` shares one count/delay across all statuses.
 async function retryOn5xx<T>(fn: () => Promise<T>): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= RETRY_5XX; attempt++) {
@@ -18,7 +32,7 @@ async function retryOn5xx<T>(fn: () => Promise<T>): Promise<T> {
       return await fn();
     } catch (err) {
       lastErr = err;
-      if (attempt < RETRY_5XX && /\b50[0234]\b/.test(messageOf(err))) {
+      if (attempt < RETRY_5XX && err instanceof ApiError && RETRYABLE_5XX.includes(err.status)) {
         await sleep(RETRY_DELAY_MS);
         continue;
       }
@@ -33,8 +47,10 @@ const SERVICE_NAME = 'setlist.fm (web)';
 const REQUEST_TIMEOUT_MS = 20_000;
 // Minimum gap between authenticated website requests. A burst of rapid
 // authenticated writes appears to get the session throttled/invalidated
-// mid-batch (the website is not the ~2 req/sec public API), so gate every
-// fetch so repeated mark/unmark calls self-pace. Injectable for tests.
+// mid-batch (the website is not the ~2 req/sec public API), so every fetch is
+// funnelled through a serialized `createThrottle` queue — concurrent calls
+// line up and fire one-per-interval instead of racing the pacer and bursting
+// together. Injectable now/sleep/paceMs for tests.
 const WRITE_PACE_MS = 600;
 
 interface WebClientDeps {
@@ -61,10 +77,7 @@ export class SetlistWebClient {
   private cookie: string | null;
   private readonly configError: Error;
   private readonly api: ApiClient;
-  private readonly now: () => number;
-  private readonly sleep: (ms: number) => Promise<void>;
-  private readonly paceMs: number;
-  private lastCallAt = 0;
+  private readonly throttle: Throttle;
 
   constructor(deps: WebClientDeps = {}) {
     this.cookie = readEnvVar('SETLIST_SESSION_COOKIE') ?? null;
@@ -80,21 +93,16 @@ export class SetlistWebClient {
         retry: { count: 1, delayMs: 2000 },
         baseHeaders: { 'User-Agent': USER_AGENT },
       });
-    this.now = deps.now ?? Date.now;
-    this.sleep = deps.sleep ?? sleep;
-    this.paceMs = deps.paceMs ?? WRITE_PACE_MS;
-  }
-
-  /**
-   * Gate each request to at least `paceMs` after the previous one. `lastCallAt`
-   * starts at 0, so against the real clock the first call never waits (the
-   * elapsed time is the full epoch); subsequent calls within the window sleep
-   * the remainder. Mirrors the resolve_concerts pacer.
-   */
-  private async gate(): Promise<void> {
-    const wait = this.paceMs - (this.now() - this.lastCallAt);
-    if (wait > 0) await this.sleep(wait);
-    this.lastCallAt = this.now();
+    // Serialized min-interval scheduler: concurrent calls queue in submission
+    // order and each starts >= paceMs after the previous START — unlike a bare
+    // lastCallAt check, two concurrent calls can't both read the same
+    // timestamp, sleep the same remainder, and fire together. The first call
+    // never waits. Mirrors the resolve_concerts pacer.
+    this.throttle = createThrottle({
+      minIntervalMs: deps.paceMs ?? WRITE_PACE_MS,
+      now: deps.now ?? Date.now,
+      sleep: deps.sleep ?? sleep,
+    });
   }
 
   /**
@@ -117,8 +125,7 @@ export class SetlistWebClient {
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */
   async fetchPage(path: string): Promise<string> {
     const cookie = await this.requireCookie();
-    await this.gate();
-    return retryOn5xx(() => this.api.fetchHtml('GET', path, { headers: { Cookie: cookie } }));
+    return this.throttle(() => retryOn5xx(() => this.api.fetchHtml('GET', path, { headers: { Cookie: cookie } })));
   }
 
   /**
@@ -129,17 +136,18 @@ export class SetlistWebClient {
    */
   async wicketAjaxGet(ajaxPath: string, baseUrl: string): Promise<string> {
     const cookie = await this.requireCookie();
-    await this.gate();
-    return retryOn5xx(() =>
-      this.api.fetchHtml('GET', ajaxPath, {
-        headers: {
-          Cookie: cookie,
-          'Wicket-Ajax': 'true',
-          'Wicket-Ajax-BaseURL': baseUrl,
-          'X-Requested-With': 'XMLHttpRequest',
-          Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
-        },
-      }),
+    return this.throttle(() =>
+      retryOn5xx(() =>
+        this.api.fetchHtml('GET', ajaxPath, {
+          headers: {
+            Cookie: cookie,
+            'Wicket-Ajax': 'true',
+            'Wicket-Ajax-BaseURL': baseUrl,
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
+          },
+        }),
+      ),
     );
   }
 }

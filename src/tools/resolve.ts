@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult, isoToDmy, messageOf } from '@chrischall/mcp-utils';
+import { textResult, isoToDmy, createThrottle, ApiError } from '@chrischall/mcp-utils';
 import { client } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -94,12 +94,13 @@ function normalizeArtist(name: string): string {
 }
 
 // A no-match search returns HTTP 404 from setlist.fm — treat that as "empty",
-// not an error; let anything else propagate.
+// not an error; let anything else propagate. Detected from ApiError's real
+// `.status` (never the message, which can echo a body mentioning "404").
 async function emptyOn404<T>(run: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await run();
   } catch (err) {
-    if (/\b404\b/.test(messageOf(err))) return fallback;
+    if (err instanceof ApiError && err.status === 404) return fallback;
     throw err;
   }
 }
@@ -265,14 +266,11 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps = {
   const budgetMs = deps.budgetMs ?? BUDGET_MS;
   const tourFallback = deps.tourFallback ?? true;
 
-  // Gate every upstream call to at least `paceMs` apart (the first runs immediately).
-  let lastCallAt = 0;
-  const req: RequestFn = async (method, path, opts) => {
-    const wait = paceMs - (now() - lastCallAt);
-    if (wait > 0) await sleep(wait);
-    lastCallAt = now();
-    return baseRequest(method, path, opts);
-  };
+  // Gate every upstream call to at least `paceMs` apart (the first runs
+  // immediately). The serialized throttle queue means even concurrent callers
+  // can't burst past the spacing.
+  const throttle = createThrottle({ minIntervalMs: paceMs, now, sleep });
+  const req: RequestFn = (method, path, opts) => throttle(() => baseRequest(method, path, opts));
 
   const start = now();
   const results: ResolveResult[] = [];
