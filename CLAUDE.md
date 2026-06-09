@@ -37,6 +37,7 @@ src/
     venues.ts     # setlist_search_venues, setlist_get_venue, setlist_get_venue_setlists
     geo.ts        # setlist_search_cities, setlist_get_city, setlist_search_countries
     users.ts      # setlist_get_user, setlist_get_user_attended, setlist_get_user_edited
+    urls.ts       # setlist_id_from_url (pure local parser — extracts the setlist ID from a /setlist/ URL)
     utilities.ts  # setlist_healthcheck
 ```
 
@@ -81,7 +82,7 @@ The MCP Registry caps `server.json`'s `description` at **100 characters** — ov
 
 Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). The implementation encodes them:
 
-- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (and that `setlist_healthcheck` is excluded). If you reword the note, keep the `followable attribution` marker or update the test.
+- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (the `NO_DATA_TOOLS` set — `setlist_healthcheck` and `setlist_id_from_url` — must NOT carry the note, as they surface no setlist.fm data). If you reword the note, keep the `followable attribution` marker or update the test.
 - **No persistent caching.** The terms forbid retaining copies beyond short-lived caching and require live retrieval. The client makes a direct API call per request and keeps no store — **do not add a response cache or local datastore.**
 - **Non-commercial only**; the free key doesn't cover commercial use.
 - **Rate limits.** Standard tier ≈ 2 req/sec; a 429 is retried once after 2s (`client.ts`).

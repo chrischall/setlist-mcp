@@ -18,7 +18,7 @@ Exposes 16 read-only tools over the [setlist.fm REST API](https://api.setlist.fm
 | Venues | `setlist_search_venues`, `setlist_get_venue`, `setlist_get_venue_setlists` |
 | Cities & countries | `setlist_search_cities`, `setlist_get_city`, `setlist_search_countries` |
 | Users | `setlist_get_user`, `setlist_get_user_attended`, `setlist_get_user_edited` |
-| Utility | `setlist_healthcheck` |
+| Utility | `setlist_healthcheck`, `setlist_id_from_url` |
 
 ## Setup
 
