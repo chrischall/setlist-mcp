@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { ApiError } from '@chrischall/mcp-utils';
 import { client } from '../../src/client.js';
 import {
   registerResolveTools,
@@ -72,9 +73,18 @@ describe('resolveConcerts (core)', () => {
   });
 
   it('treats a 404 (no results) as unmatched, not an error', async () => {
-    const request = vi.fn(() => Promise.reject(new Error('setlist.fm error 404 for GET /1.0/search/setlists')));
+    const request = vi.fn(() =>
+      Promise.reject(new ApiError(404, 'setlist.fm error 404 for GET /1.0/search/setlists')),
+    );
     const [r] = await resolveConcerts([{ artist: 'Nobody', date: '2025-01-01' }], fast(request));
     expect(r.match).toBeNull();
+  });
+
+  it('propagates a non-404 error even when its body mentions 404', async () => {
+    const request = vi.fn(() =>
+      Promise.reject(new ApiError(500, 'setlist.fm error 500 for GET /1.0/search/setlists: page /404 not cached')),
+    );
+    await expect(resolveConcerts([{ artist: 'Nobody', date: '2025-01-01' }], fast(request))).rejects.toThrow(/500/);
   });
 
   it('offers a same-tour reference for an empty stub, picking the closest populated date', async () => {

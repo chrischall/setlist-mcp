@@ -65,6 +65,20 @@ describe('SetlistWebClient', () => {
     expect(n).toBe(2);
   });
 
+  it('does not retry a 404 whose body merely mentions a 5xx code', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    const fn = vi.fn(async () => {
+      return new Response('Not found — see /errors/503 for maintenance windows', {
+        status: 404,
+        headers: { 'content-type': 'text/html' },
+      });
+    });
+    vi.stubGlobal('fetch', fn);
+    const c = new SetlistWebClient();
+    await expect(c.fetchPage('/setlist/x.html')).rejects.toThrow(/404/);
+    expect(fn).toHaveBeenCalledTimes(1); // no retries: a 404 is not transient
+  });
+
   it('paces consecutive authenticated requests at least paceMs apart', async () => {
     process.env.SETLIST_SESSION_COOKIE = 'c=1';
     stubFetch();
@@ -82,6 +96,32 @@ describe('SetlistWebClient', () => {
     await c.fetchPage('/b'); // second must be gated ~paceMs after the first
     expect(sleeps).toEqual([500]);
     expect(calls.length).toBe(2);
+  });
+
+  it('serializes CONCURRENT requests: the second starts >= paceMs after the first', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    let t = 1_000_000; // start high so the first call never waits
+    const startTimes: number[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        startTimes.push(t);
+        return new Response('<html>ok</html>', { status: 200, headers: { 'content-type': 'text/html' } });
+      }),
+    );
+    const c = new SetlistWebClient({
+      now: () => t,
+      sleep: async (ms: number) => {
+        t += ms;
+      },
+      paceMs: 500,
+    });
+    // Fired concurrently (e.g. parallel tool calls) — the pacer must still
+    // space the request starts, not let both sleep the same remainder and
+    // burst together.
+    await Promise.all([c.fetchPage('/a'), c.fetchPage('/b')]);
+    expect(startTimes).toHaveLength(2);
+    expect(startTimes[1] - startTimes[0]).toBeGreaterThanOrEqual(500);
   });
 
   it('throws a clear config error (no network) when no session is set and the bridge is disabled', async () => {
