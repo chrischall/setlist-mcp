@@ -17,6 +17,9 @@ describe('SetlistWebClient', () => {
   beforeEach(() => { calls = []; });
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Restore real timers so the 5xx-retry test's vi.useFakeTimers() can't
+    // leak fake-timer state into subsequent tests (no-op when not faked).
+    vi.useRealTimers();
     delete process.env.SETLIST_SESSION_COOKIE;
     delete process.env.SETLIST_DISABLE_FETCHPROXY;
   });
@@ -42,6 +45,24 @@ describe('SetlistWebClient', () => {
     expect(h['Wicket-Ajax-BaseURL']).toBe('setlist/x.html');
     expect(h['X-Requested-With']).toBe('XMLHttpRequest');
     expect(h.Cookie).toBe('c=1');
+  });
+
+  it('retries a transient 5xx then succeeds', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    vi.useFakeTimers();
+    let n = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      n += 1;
+      return new Response(n === 1 ? 'gateway' : '<html>ok</html>', {
+        status: n === 1 ? 502 : 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    }));
+    const c = new SetlistWebClient();
+    const p = c.fetchPage('/setlist/x.html');
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(p).resolves.toContain('ok');
+    expect(n).toBe(2);
   });
 
   it('throws a clear config error (no network) when no session is set and the bridge is disabled', async () => {

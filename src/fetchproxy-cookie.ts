@@ -49,11 +49,16 @@ export async function grabSessionCookie(): Promise<string | null> {
     return null; // bridge package unavailable (shouldn't happen — bundled)
   }
 
+  // Declare the apex `setlist.fm` scope (so a re-render with no scope change
+  // never needs re-approval), but read cookies from the `www` subdomain — the
+  // session cookies are host-only on www.setlist.fm, and www is a subdomain of
+  // the approved apex, so chrome.cookies.get sees JSESSIONID without a re-pair.
   const session = await withTimeout(
     bootstrap({
       serverName: 'setlist-mcp',
       version: VERSION,
-      domains: ['www.setlist.fm'],
+      domains: ['setlist.fm'],
+      storageSubdomain: 'www',
       declare: { cookies: SESSION_COOKIE_KEYS, localStorage: [], sessionStorage: [], captureHeaders: [] },
     }),
     BOOTSTRAP_TIMEOUT_MS,
