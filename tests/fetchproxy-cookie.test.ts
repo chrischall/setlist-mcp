@@ -15,7 +15,8 @@ describe('grabSessionCookie', () => {
     expect(header).toBe('JSESSIONID=abc; RememberMeCookie=rm');
     // declared the right cookie keys + setlist.fm domain
     const arg = bootstrap.mock.calls[0][0];
-    expect(arg.domains).toEqual(['www.setlist.fm']);
+    expect(arg.domains).toEqual(['setlist.fm']);
+    expect(arg.storageSubdomain).toBe('www');
     expect(arg.declare.cookies).toEqual(['JSESSIONID', 'RememberMeCookie', 'aws-waf-token']);
   });
 

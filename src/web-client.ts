@@ -1,10 +1,32 @@
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { loadDotenvSafely, readEnvVar, createApiClient, type ApiClient } from '@chrischall/mcp-utils';
+import { loadDotenvSafely, readEnvVar, createApiClient, messageOf, type ApiClient } from '@chrischall/mcp-utils';
 
 // Load .env for local dev (guarded; the mcpb bundle omits dotenv).
 const __dirname = dirname(fileURLToPath(import.meta.url));
 await loadDotenvSafely({ path: join(__dirname, '..', '.env'), override: false });
+
+const RETRY_5XX = 3; // www.setlist.fm intermittently returns 500/502/503 from its gateway
+const RETRY_DELAY_MS = 1200;
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+// Retry transient gateway errors (502/503/504); createApiClient only retries 429.
+async function retryOn5xx<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= RETRY_5XX; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < RETRY_5XX && /\b50[0234]\b/.test(messageOf(err))) {
+        await sleep(RETRY_DELAY_MS);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
 
 const BASE_URL = 'https://www.setlist.fm';
 const SERVICE_NAME = 'setlist.fm (web)';
@@ -62,7 +84,7 @@ export class SetlistWebClient {
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */
   async fetchPage(path: string): Promise<string> {
     const cookie = await this.requireCookie();
-    return this.api.fetchHtml('GET', path, { headers: { Cookie: cookie } });
+    return retryOn5xx(() => this.api.fetchHtml('GET', path, { headers: { Cookie: cookie } }));
   }
 
   /**
@@ -73,15 +95,17 @@ export class SetlistWebClient {
    */
   async wicketAjaxGet(ajaxPath: string, baseUrl: string): Promise<string> {
     const cookie = await this.requireCookie();
-    return this.api.fetchHtml('GET', ajaxPath, {
-      headers: {
-        Cookie: cookie,
-        'Wicket-Ajax': 'true',
-        'Wicket-Ajax-BaseURL': baseUrl,
-        'X-Requested-With': 'XMLHttpRequest',
-        Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
-      },
-    });
+    return retryOn5xx(() =>
+      this.api.fetchHtml('GET', ajaxPath, {
+        headers: {
+          Cookie: cookie,
+          'Wicket-Ajax': 'true',
+          'Wicket-Ajax-BaseURL': baseUrl,
+          'X-Requested-With': 'XMLHttpRequest',
+          Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
+        },
+      }),
+    );
   }
 }
 

@@ -44,6 +44,24 @@ describe('SetlistWebClient', () => {
     expect(h.Cookie).toBe('c=1');
   });
 
+  it('retries a transient 5xx then succeeds', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    vi.useFakeTimers();
+    let n = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      n += 1;
+      return new Response(n === 1 ? 'gateway' : '<html>ok</html>', {
+        status: n === 1 ? 502 : 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    }));
+    const c = new SetlistWebClient();
+    const p = c.fetchPage('/setlist/x.html');
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(p).resolves.toContain('ok');
+    expect(n).toBe(2);
+  });
+
   it('throws a clear config error (no network) when no session is set and the bridge is disabled', async () => {
     delete process.env.SETLIST_SESSION_COOKIE;
     process.env.SETLIST_DISABLE_FETCHPROXY = '1'; // skip the fetchproxy fallback
