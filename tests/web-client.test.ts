@@ -65,6 +65,25 @@ describe('SetlistWebClient', () => {
     expect(n).toBe(2);
   });
 
+  it('paces consecutive authenticated requests at least paceMs apart', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    stubFetch();
+    let t = 1_000_000; // start high so the first call (lastCallAt=0) never waits
+    const sleeps: number[] = [];
+    const c = new SetlistWebClient({
+      now: () => t,
+      sleep: async (ms: number) => {
+        sleeps.push(ms);
+        t += ms;
+      },
+      paceMs: 500,
+    });
+    await c.fetchPage('/a'); // first request runs immediately
+    await c.fetchPage('/b'); // second must be gated ~paceMs after the first
+    expect(sleeps).toEqual([500]);
+    expect(calls.length).toBe(2);
+  });
+
   it('throws a clear config error (no network) when no session is set and the bridge is disabled', async () => {
     delete process.env.SETLIST_SESSION_COOKIE;
     process.env.SETLIST_DISABLE_FETCHPROXY = '1'; // skip the fetchproxy fallback

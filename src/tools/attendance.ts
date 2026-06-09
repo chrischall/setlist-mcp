@@ -18,6 +18,40 @@ interface AttendanceControl {
 }
 
 /**
+ * Raised when an authenticated setlist.fm page renders in a logged-out state —
+ * the session cookie has expired or been invalidated (commonly mid-batch, after
+ * a burst of authenticated writes). Distinct from a generic "control not found"
+ * so the caller knows to re-copy SETLIST_SESSION_COOKIE / re-pair the bridge
+ * rather than chasing a layout or rate-limit issue.
+ */
+export class SessionExpiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SessionExpiredError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+/**
+ * Heuristic: does this page look logged-out? setlist.fm renders a sign-in link
+ * (`/signin`) only when no session is active; a logged-in page links to the
+ * account/logout instead. Conservative on purpose — if the marker isn't found
+ * we fall back to the generic message (no worse than before), so a false
+ * negative never misreports a real layout change as an expiry.
+ */
+export function looksLoggedOut(html: string): boolean {
+  return /href="\/(?:signin|login)\b/i.test(html);
+}
+
+const SESSION_EXPIRED_MSG =
+  'Your setlist.fm session is signed out or expired — the page rendered logged-out. ' +
+  'Re-copy SETLIST_SESSION_COOKIE from a logged-in www.setlist.fm request (or re-pair the fetchproxy browser bridge), then retry.';
+
+const CONTROL_MISSING_MSG =
+  'Could not find the attendance control on the setlist page. Your session may have expired ' +
+  '(re-copy SETLIST_SESSION_COOKIE), or setlist.fm rate-limited or changed the page layout — slow down and retry.';
+
+/**
  * Locate the attendance toggle in a logged-in setlist page and read its state.
  * The control is a Wicket `wicketAjaxGet(...)` anchor whose title is
  * "Add this setlist to your attended shows." (not attended) or
@@ -61,11 +95,14 @@ async function setAttendance(
     city: meta.venue?.city?.name,
   };
 
-  const control = parseAttendance(await webClient.fetchPage(path));
+  const html = await webClient.fetchPage(path);
+  const control = parseAttendance(html);
   if (!control) {
-    throw new Error(
-      'Could not find the attendance control on the setlist page — your setlist.fm session has likely expired (re-copy SETLIST_SESSION_COOKIE) or the page layout changed.',
-    );
+    // The control is absent on a logged-out page. Distinguish a dead session
+    // (the common mid-batch failure) from an ambiguous miss so the caller gets
+    // an actionable message instead of one opaque error.
+    if (looksLoggedOut(html)) throw new SessionExpiredError(SESSION_EXPIRED_MSG);
+    throw new Error(CONTROL_MISSING_MSG);
   }
 
   if (control.attended === desired) {
