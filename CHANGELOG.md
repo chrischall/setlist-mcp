@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/chrischall/setlist-mcp/compare/v0.6.1...v0.7.0) (2026-06-09)
+
+
+### Features
+
+* setlist_id_from_url — extract a setlist ID from a setlist.fm URL ([#20](https://github.com/chrischall/setlist-mcp/issues/20)) ([23fa915](https://github.com/chrischall/setlist-mcp/commit/23fa915613e07d3ffb4dfffa53b57ada3a294336))
+
+
+### Bug Fixes
+
+* detect session expiry and pace authenticated writes in attendance ([#21](https://github.com/chrischall/setlist-mcp/issues/21)) ([22541de](https://github.com/chrischall/setlist-mcp/commit/22541de9fa28f8f837acd386d68bdc8221f1fd1a))
+
 ## [0.6.1](https://github.com/chrischall/setlist-mcp/compare/v0.6.0...v0.6.1) (2026-06-09)
 
 
