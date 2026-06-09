@@ -34,7 +34,8 @@
       ],
       "env": {
         "SETLIST_API_KEY": "${user_config.setlist_api_key}",
-        "SETLIST_ACCEPT_LANGUAGE": "${user_config.setlist_accept_language}"
+        "SETLIST_ACCEPT_LANGUAGE": "${user_config.setlist_accept_language}",
+        "SETLIST_SESSION_COOKIE": "${user_config.setlist_session_cookie}"
       }
     }
   },
@@ -52,6 +53,13 @@
       "description": "Localize city/country names: one of en, es, fr, de, pt, tr, it, pl",
       "required": false,
       "default": "en"
+    },
+    "setlist_session_cookie": {
+      "type": "string",
+      "title": "Session cookie (optional)",
+      "description": "Only for the attendance write tools: the Cookie header from a logged-in www.setlist.fm request (DevTools → Network). Leave blank to use the read-only tools.",
+      "required": false,
+      "sensitive": true
     }
   },
   "tools": [
@@ -118,6 +126,14 @@
     {
       "name": "setlist_resolve_concerts",
       "description": "Batch-resolve up to 24 {artist, date, city?, venue?} to their best-match setlists"
+    },
+    {
+      "name": "setlist_mark_attended",
+      "description": "Record on your account that you attended a show (needs SETLIST_SESSION_COOKIE; confirm-gated)"
+    },
+    {
+      "name": "setlist_unmark_attended",
+      "description": "Remove a show from your attended list (needs SETLIST_SESSION_COOKIE; confirm-gated)"
     },
     {
       "name": "setlist_healthcheck",

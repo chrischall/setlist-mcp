@@ -29,6 +29,13 @@
           "isRequired": false,
           "format": "string",
           "isSecret": false
+        },
+        {
+          "name": "SETLIST_SESSION_COOKIE",
+          "description": "Optional. Logged-in www.setlist.fm Cookie header — enables the attendance write tools.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
         }
       ]
     }
