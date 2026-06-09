@@ -31,6 +31,18 @@ async function retryOn5xx<T>(fn: () => Promise<T>): Promise<T> {
 const BASE_URL = 'https://www.setlist.fm';
 const SERVICE_NAME = 'setlist.fm (web)';
 const REQUEST_TIMEOUT_MS = 20_000;
+// Minimum gap between authenticated website requests. A burst of rapid
+// authenticated writes appears to get the session throttled/invalidated
+// mid-batch (the website is not the ~2 req/sec public API), so gate every
+// fetch so repeated mark/unmark calls self-pace. Injectable for tests.
+const WRITE_PACE_MS = 600;
+
+interface WebClientDeps {
+  api?: ApiClient;
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
+  paceMs?: number;
+}
 // A browser-like UA; the bare default can trip the site's bot heuristics.
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -49,19 +61,40 @@ export class SetlistWebClient {
   private cookie: string | null;
   private readonly configError: Error;
   private readonly api: ApiClient;
+  private readonly now: () => number;
+  private readonly sleep: (ms: number) => Promise<void>;
+  private readonly paceMs: number;
+  private lastCallAt = 0;
 
-  constructor() {
+  constructor(deps: WebClientDeps = {}) {
     this.cookie = readEnvVar('SETLIST_SESSION_COOKIE') ?? null;
     this.configError = new Error(
       'No setlist.fm session: set SETLIST_SESSION_COOKIE (copy the Cookie header from a logged-in www.setlist.fm request) or connect the fetchproxy browser bridge.',
     );
-    this.api = createApiClient({
-      baseUrl: BASE_URL,
-      serviceName: SERVICE_NAME,
-      timeout: REQUEST_TIMEOUT_MS,
-      retry: { count: 1, delayMs: 2000 },
-      baseHeaders: { 'User-Agent': USER_AGENT },
-    });
+    this.api =
+      deps.api ??
+      createApiClient({
+        baseUrl: BASE_URL,
+        serviceName: SERVICE_NAME,
+        timeout: REQUEST_TIMEOUT_MS,
+        retry: { count: 1, delayMs: 2000 },
+        baseHeaders: { 'User-Agent': USER_AGENT },
+      });
+    this.now = deps.now ?? Date.now;
+    this.sleep = deps.sleep ?? sleep;
+    this.paceMs = deps.paceMs ?? WRITE_PACE_MS;
+  }
+
+  /**
+   * Gate each request to at least `paceMs` after the previous one. `lastCallAt`
+   * starts at 0, so against the real clock the first call never waits (the
+   * elapsed time is the full epoch); subsequent calls within the window sleep
+   * the remainder. Mirrors the resolve_concerts pacer.
+   */
+  private async gate(): Promise<void> {
+    const wait = this.paceMs - (this.now() - this.lastCallAt);
+    if (wait > 0) await this.sleep(wait);
+    this.lastCallAt = this.now();
   }
 
   /**
@@ -84,6 +117,7 @@ export class SetlistWebClient {
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */
   async fetchPage(path: string): Promise<string> {
     const cookie = await this.requireCookie();
+    await this.gate();
     return retryOn5xx(() => this.api.fetchHtml('GET', path, { headers: { Cookie: cookie } }));
   }
 
@@ -95,6 +129,7 @@ export class SetlistWebClient {
    */
   async wicketAjaxGet(ajaxPath: string, baseUrl: string): Promise<string> {
     const cookie = await this.requireCookie();
+    await this.gate();
     return retryOn5xx(() =>
       this.api.fetchHtml('GET', ajaxPath, {
         headers: {
