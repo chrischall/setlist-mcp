@@ -1,6 +1,6 @@
 # setlist-mcp
 
-MCP server for [setlist.fm](https://www.setlist.fm). Wraps the setlist.fm REST API (`https://api.setlist.fm/rest`) and exposes 16 read-only tools to Claude over stdio. setlist.fm has no write API — every tool is a GET.
+MCP server for [setlist.fm](https://www.setlist.fm). Wraps the setlist.fm REST API (`https://api.setlist.fm/rest`) and exposes 20 tools to Claude over stdio: 18 read-only (the REST API has no write endpoints — those are all GETs) plus 2 authenticated "I was there" attendance actions (`setlist_mark_attended` / `setlist_unmark_attended`) performed against the logged-in **website** (Apache Wicket), not the REST API.
 
 ## Commands
 
@@ -37,6 +37,8 @@ src/
     venues.ts     # setlist_search_venues, setlist_get_venue, setlist_get_venue_setlists
     geo.ts        # setlist_search_cities, setlist_get_city, setlist_search_countries
     users.ts      # setlist_get_user, setlist_get_user_attended, setlist_get_user_edited
+    resolve.ts    # setlist_resolve_concerts (batch {artist,date,city?,venue?} → setlist resolver)
+    attendance.ts # setlist_mark_attended, setlist_unmark_attended (authenticated website writes via web-client.ts)
     urls.ts       # setlist_id_from_url (pure local parser — extracts the setlist ID from a /setlist/ URL)
     utilities.ts  # setlist_healthcheck
 ```
