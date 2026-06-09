@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/chrischall/setlist-mcp/compare/v0.6.0...v0.6.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* fetchproxy cookie grab (apex scope + www subdomain) and transient 5xx retry ([#17](https://github.com/chrischall/setlist-mcp/issues/17)) ([a155364](https://github.com/chrischall/setlist-mcp/commit/a155364e9dccf4caeca3c0e0354aa81b9bb5fb7d))
+
 ## [0.6.0](https://github.com/chrischall/setlist-mcp/compare/v0.5.1...v0.6.0) (2026-06-09)
 
 
