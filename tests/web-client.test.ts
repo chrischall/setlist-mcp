@@ -17,6 +17,9 @@ describe('SetlistWebClient', () => {
   beforeEach(() => { calls = []; });
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Restore real timers so the 5xx-retry test's vi.useFakeTimers() can't
+    // leak fake-timer state into subsequent tests (no-op when not faked).
+    vi.useRealTimers();
     delete process.env.SETLIST_SESSION_COOKIE;
     delete process.env.SETLIST_DISABLE_FETCHPROXY;
   });
