@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/chrischall/setlist-mcp/compare/v0.7.0...v0.7.1) (2026-06-09)
+
+
+### Refactor
+
+* migrate pacing and status sniffing to mcp-utils 0.7.0 primitives ([#23](https://github.com/chrischall/setlist-mcp/issues/23)) ([b46f635](https://github.com/chrischall/setlist-mcp/commit/b46f6352ae58b4dda63720fc41433224140f21c3))
+
 ## [0.7.0](https://github.com/chrischall/setlist-mcp/compare/v0.6.1...v0.7.0) (2026-06-09)
 
 
