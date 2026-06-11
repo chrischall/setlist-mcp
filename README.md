@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/chrischall/setlist-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chrischall/setlist-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/setlist-mcp)](https://www.npmjs.com/package/setlist-mcp)
+[![license](https://img.shields.io/npm/l/setlist-mcp)](LICENSE)
 
 MCP server for [setlist.fm](https://www.setlist.fm) — search concert setlists, artists, venues, tours, and cities from Claude via natural language. Mostly read-only (the setlist.fm REST API exposes no write endpoints), plus authenticated "I was there" attendance actions via your logged-in session.
 
