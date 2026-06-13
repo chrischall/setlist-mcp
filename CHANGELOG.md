@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.2](https://github.com/chrischall/setlist-mcp/compare/v0.7.1...v0.7.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* bot PRs bypass the CI gate unconditionally ([#28](https://github.com/chrischall/setlist-mcp/issues/28)) ([bbbf7d5](https://github.com/chrischall/setlist-mcp/commit/bbbf7d5cdb1899956e9bae89d6e61a797e925679))
+
+
+### Documentation
+
+* add MIT LICENSE file and README badges ([#25](https://github.com/chrischall/setlist-mcp/issues/25)) ([110ffc3](https://github.com/chrischall/setlist-mcp/commit/110ffc3ee77a4da33bf5b80e6c5a05fdacd317e8))
+
 ## [0.7.1](https://github.com/chrischall/setlist-mcp/compare/v0.7.0...v0.7.1) (2026-06-09)
 
 
