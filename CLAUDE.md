@@ -74,9 +74,12 @@ Version lives in `src/version.ts` (`VERSION`, marked `// x-release-please-versio
 
 The MCP Registry caps `server.json`'s `description` at **100 characters** — over that, `mcp-publisher publish` 422s. Check with `jq -r '.description | length' server.json`.
 
+<!-- pr-workflow:v2 -->
 ## Pull requests & release notes
 
 **Default workflow: branch + PR, even for solo work.** Apply exactly one release-notes label per PR (`enhancement`, `bug`, `security`, `refactor`, `documentation`, `test`, `dependencies`, `ci`/`github_actions`, or `ignore-for-release`). The PR title becomes the changelog bullet.
+
+The **PR title MUST be a Conventional Commit**, written user-facing (`fix(scope): …`, `feat(scope): …`), not internal shorthand. Because the repo squash-merges, the PR title *becomes the squash commit's subject line* — the only thing release-please parses to pick the version bump and changelog section. Only `feat` (minor), `fix` (patch), and `!`/`BREAKING CHANGE` (major) cut a release; `perf`/`refactor`/`docs` show in the changelog without bumping; `ci`/`test`/`build`/`chore` are recognised but hidden (see `release-please-config.json` → `changelog-sections`). A title without a conventional type is invisible to release-please — no bump, no changelog line. Prefixes in *individual commits* don't help; squash keeps only the title.
 
 **Don't merge PRs yourself.** `pr-auto-review.yml` reviews every PR and adds `ready-to-merge` on a `pass` verdict; `auto-merge.yml` then squash-merges once CI is green. Open a PR only when the change is COMPLETE in a single push — auto-merge ships it the moment review passes, and later commits orphan onto a stale branch. Need a checkpoint without shipping? Open it `--draft` (auto-review skips drafts).
 
