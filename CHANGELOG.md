@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.3](https://github.com/chrischall/setlist-mcp/compare/v0.7.2...v0.7.3) (2026-06-15)
+
+
+### Documentation
+
+* audit CLAUDE.md and add auto-review follow-up convention ([#37](https://github.com/chrischall/setlist-mcp/issues/37)) ([f7adf83](https://github.com/chrischall/setlist-mcp/commit/f7adf8316a88a8acb6922987bdf5d24b0d24d98c))
+* require Conventional Commit PR titles for release-please ([#32](https://github.com/chrischall/setlist-mcp/issues/32)) ([5f77353](https://github.com/chrischall/setlist-mcp/commit/5f77353b8f64554bc68c10e93ecdbcace1b0d848))
+
 ## [0.7.2](https://github.com/chrischall/setlist-mcp/compare/v0.7.1...v0.7.2) (2026-06-13)
 
 
