@@ -29,7 +29,16 @@ src/
   client.ts       # SetlistClient — reads SETLIST_API_KEY, attaches x-api-key
                   #   header per request, 15s request timeout + 2s 429 retry (both
                   #   via createApiClient), normalizes response eventDate → ISO
-                  #   (deepMapStringField + dmyToIso from @chrischall/mcp-utils)
+                  #   (deepMapStringField + dmyToIso from @chrischall/mcp-utils),
+                  #   then augmentSetlists(...) annotates each setlist
+  augment.ts      # augmentSetlists — walks a response, tags every setlist object
+                  #   with songCount / setCount / hasSongs so callers skip empty stubs
+  web-client.ts   # SetlistWebClient — authenticated www.setlist.fm (website) client
+                  #   for the attendance writes; session-cookie auth, 5xx retry,
+                  #   serialized write pacer (see attendance gotcha)
+  fetchproxy-cookie.ts # grabSessionCookie — one-shot fetchproxy browser-bridge
+                  #   fallback that lifts the logged-in session cookie when
+                  #   SETLIST_SESSION_COOKIE is unset (lazy; @fetchproxy/bootstrap)
   attribution.ts  # ATTRIBUTION_NOTE appended to data tool descriptions
   tools/
     artists.ts    # setlist_search_artists, setlist_get_artist, setlist_get_artist_setlists
@@ -51,11 +60,18 @@ setlist.fm authenticates with an **`x-api-key` header** (not a Bearer token). `c
 
 **Deferred-config-error pattern:** `SetlistClient` reads `SETLIST_API_KEY` in its constructor; if missing it stores a `configError` instead of throwing, and re-raises it from `requireKey()` at request time. This lets the server boot and answer the host's install-time `tools/list` probe even without a key — the error only surfaces on the first tool call.
 
+**Attendance writes use a separate session-cookie auth** (`web-client.ts`). The two write tools act against the logged-in **website** (Apache Wicket), which has no API key. `SetlistWebClient.requireCookie()` resolves auth in order: `SETLIST_SESSION_COOKIE` (env) → a one-shot fetchproxy browser-bridge grab from a signed-in tab (`grabSessionCookie()` in `fetchproxy-cookie.ts`, lazy-imported so the env path never loads the bridge; disable with `SETLIST_DISABLE_FETCHPROXY`) → a deferred config error at request time. A grabbed cookie is cached on the instance for the process. This client is kept entirely separate from the api-key `SetlistClient`, so the public-API (read) tools never depend on a session.
+
 ## Environment
 
 ```
-SETLIST_API_KEY=<your key>        # Required. Apply at https://www.setlist.fm/settings/api
+SETLIST_API_KEY=<your key>        # Required (read tools). Apply at https://www.setlist.fm/settings/api
 SETLIST_ACCEPT_LANGUAGE=en        # Optional. one of: en, es, fr, de, pt, tr, it, pl
+SETLIST_SESSION_COOKIE=<Cookie>   # Optional. ONLY for the attendance write tools — the Cookie header
+                                  #   (JSESSIONID=…; RememberMeCookie=…; aws-waf-token=…) from a
+                                  #   logged-in www.setlist.fm request. Falls back to the fetchproxy
+                                  #   browser bridge if unset.
+SETLIST_DISABLE_FETCHPROXY=1      # Optional. Disable the fetchproxy cookie-grab fallback (1/true/yes/on).
 ```
 
 Loaded via `dotenv` from `.env` next to `dist/` (guarded import; the mcpb bundle omits `dotenv` and the host provides env). `readEnvVar` treats blank, `"undefined"`, `"null"`, and unsubstituted `${FOO}` placeholders as unset.
@@ -81,7 +97,20 @@ The MCP Registry caps `server.json`'s `description` at **100 characters** — ov
 
 The **PR title MUST be a Conventional Commit**, written user-facing (`fix(scope): …`, `feat(scope): …`), not internal shorthand. Because the repo squash-merges, the PR title *becomes the squash commit's subject line* — the only thing release-please parses to pick the version bump and changelog section. Only `feat` (minor), `fix` (patch), and `!`/`BREAKING CHANGE` (major) cut a release; `perf`/`refactor`/`docs` show in the changelog without bumping; `ci`/`test`/`build`/`chore` are recognised but hidden (see `release-please-config.json` → `changelog-sections`). A title without a conventional type is invisible to release-please — no bump, no changelog line. Prefixes in *individual commits* don't help; squash keeps only the title.
 
-**Don't merge PRs yourself.** `pr-auto-review.yml` reviews every PR and adds `ready-to-merge` on a `pass` verdict; `auto-merge.yml` then squash-merges once CI is green. Open a PR only when the change is COMPLETE in a single push — auto-merge ships it the moment review passes, and later commits orphan onto a stale branch. Need a checkpoint without shipping? Open it `--draft` (auto-review skips drafts).
+**Don't merge PRs yourself.** `pr-auto-review.yml` reviews every PR and arms `ready-to-merge` on a `pass` OR `warn` verdict; `auto-merge.yml` then squash-merges once CI is green. A `warn` (nits only) or `fail` verdict also opens/updates a follow-up issue (see below); only `fail` blocks the merge. Open a PR only when the change is COMPLETE in a single push — auto-merge ships it the moment review passes, and later commits orphan onto a stale branch. Need a checkpoint without shipping? Open it `--draft` (auto-review skips drafts).
+
+### Auto-review follow-up issues
+
+When a PR's auto-review verdict is `warn` or `fail`, the `chrischall/workflows` pipeline opens or updates a single `auto-review-followup` issue ("Auto-review follow-ups for PR #N") whose checklist captures every finding, and links it from the PR's `<!-- auto-review-verdict -->` comment (`📋 Tracking follow-ups: #N`). `warn` (nits only) still auto-merges — the issue carries the nits forward, so most nits are fixed in a *later* PR; `fail` blocks until the important findings are addressed on the PR itself.
+
+When asked to address the auto-review comments / review findings on a PR:
+
+1. Read the verdict comment, open the linked `auto-review-followup` issue, and treat its checklist as the work list (alongside any inline review comments).
+2. Resolve each item, checking off only what you've **verified** is genuinely fixed.
+3. If every item is resolved on the current PR, add `Closes #<issue>` to that PR's body so the merge closes it; if some are deferred, check off only the resolved ones and leave the issue open.
+4. For nits whose `warn` PR already auto-merged, address them in a follow-up PR that references `Closes #<issue>`.
+
+(Mirrors the fleet-wide convention in `~/.claude/CLAUDE.md`.)
 
 ## API terms (compliance — don't regress these)
 
@@ -96,7 +125,7 @@ Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). T
 ## Gotchas
 
 - **ESM + NodeNext**: relative imports use `.js` extensions even from `.ts` source.
-- **Read-only API**: setlist.fm exposes no write endpoints; there are no mutating tools and no `confirm` gating.
+- **Read-only REST API, but two website writes**: the setlist.fm *REST API* exposes no write endpoints, so the 18 data tools are all GETs. The only mutating tools are `setlist_mark_attended` / `setlist_unmark_attended`, which act against the logged-in website and are `confirm`-gated: without `confirm: true` they return a dry-run preview and make no change; with it they toggle attendance and verify by re-reading the attended list.
 - **ISO date surface**: the whole MCP surface uses ISO `yyyy-MM-dd`. The API does NOT — it takes event dates as `dd-MM-yyyy`, `lastUpdated` as `yyyyMMddHHmmss`, and returns `eventDate` as `dd-MM-yyyy`. The shared `@chrischall/mcp-utils` date helpers translate at the boundary: tool inputs convert ISO→API (`isoToDmy`/`isoToCompactTimestamp` in `setlists.ts`), and `client.request` rewrites every response `eventDate`→ISO via `deepMapStringField(data, 'eventDate', dmyToIso)`. Keep new date-bearing inputs/outputs ISO and route them through those helpers. `lastUpdated` outputs are already ISO-8601 timestamps and are left as-is.
 - **Request timeout**: `createApiClient({ timeout: 15_000 })` bounds each request (throws mcp-utils' `RequestTimeoutError`) so a hung upstream fails fast instead of hanging the tool call.
 - **Rate limiting**: 429 retries once after 2s, then throws. setlist.fm's standard tier is ~2 req/sec, 1440/day.
