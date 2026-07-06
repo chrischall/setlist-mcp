@@ -75,15 +75,11 @@ const USER_AGENT =
  */
 export class SetlistWebClient {
   private cookie: string | null;
-  private readonly configError: Error;
   private readonly api: ApiClient;
   private readonly throttle: Throttle;
 
   constructor(deps: WebClientDeps = {}) {
     this.cookie = readEnvVar('SETLIST_SESSION_COOKIE') ?? null;
-    this.configError = new Error(
-      'No setlist.fm session: set SETLIST_SESSION_COOKIE (copy the Cookie header from a logged-in www.setlist.fm request) or connect the fetchproxy browser bridge.',
-    );
     this.api =
       deps.api ??
       createApiClient({
@@ -106,20 +102,19 @@ export class SetlistWebClient {
   }
 
   /**
-   * Resolve the session cookie: `SETLIST_SESSION_COOKIE` (env) first, else a
-   * one-time fetchproxy `read_cookies` grab from the signed-in tab (lazy-imported
-   * so the env path never loads the bridge), else the deferred config error.
-   * The grabbed cookie is cached on the instance for the process lifetime.
+   * Resolve the session cookie: `SETLIST_SESSION_COOKIE` (env, read at
+   * construction) first, else the shared three-path resolver in
+   * fetchproxy-cookie.ts — a one-time fetchproxy `read_cookies` grab from the
+   * signed-in tab (lazy-imported so the env path never loads the bridge). The
+   * resolver throws an actionable, deferred config error when nothing is
+   * configured. The resolved cookie is cached on the instance for the process.
    */
   private async requireCookie(): Promise<string> {
     if (this.cookie) return this.cookie;
-    const { grabSessionCookie } = await import('./fetchproxy-cookie.js');
-    const grabbed = await grabSessionCookie();
-    if (grabbed) {
-      this.cookie = grabbed;
-      return grabbed;
-    }
-    throw this.configError;
+    const { resolveSessionCookie } = await import('./fetchproxy-cookie.js');
+    const { cookieHeader } = await resolveSessionCookie();
+    this.cookie = cookieHeader;
+    return cookieHeader;
   }
 
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */

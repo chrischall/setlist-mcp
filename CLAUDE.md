@@ -36,9 +36,10 @@ src/
   web-client.ts   # SetlistWebClient — authenticated www.setlist.fm (website) client
                   #   for the attendance writes; session-cookie auth, 5xx retry,
                   #   serialized write pacer (see attendance gotcha)
-  fetchproxy-cookie.ts # grabSessionCookie — one-shot fetchproxy browser-bridge
-                  #   fallback that lifts the logged-in session cookie when
-                  #   SETLIST_SESSION_COOKIE is unset (lazy; @fetchproxy/bootstrap)
+  fetchproxy-cookie.ts # resolveSessionCookie — shared createAuthResolver
+                  #   (mcp-utils) three-path resolver: SETLIST_SESSION_COOKIE →
+                  #   one-shot fetchproxy browser-bridge grab (15s withDeadline)
+                  #   → actionable error (lazy; @fetchproxy/bootstrap)
   attribution.ts  # ATTRIBUTION_NOTE appended to data tool descriptions
   tools/
     artists.ts    # setlist_search_artists, setlist_get_artist, setlist_get_artist_setlists
@@ -60,7 +61,7 @@ setlist.fm authenticates with an **`x-api-key` header** (not a Bearer token). `c
 
 **Deferred-config-error pattern:** `SetlistClient` reads `SETLIST_API_KEY` in its constructor; if missing it stores a `configError` instead of throwing, and re-raises it from `requireKey()` at request time. This lets the server boot and answer the host's install-time `tools/list` probe even without a key — the error only surfaces on the first tool call.
 
-**Attendance writes use a separate session-cookie auth** (`web-client.ts`). The two write tools act against the logged-in **website** (Apache Wicket), which has no API key. `SetlistWebClient.requireCookie()` resolves auth in order: `SETLIST_SESSION_COOKIE` (env) → a one-shot fetchproxy browser-bridge grab from a signed-in tab (`grabSessionCookie()` in `fetchproxy-cookie.ts`, lazy-imported so the env path never loads the bridge; disable with `SETLIST_DISABLE_FETCHPROXY`) → a deferred config error at request time. A grabbed cookie is cached on the instance for the process. This client is kept entirely separate from the api-key `SetlistClient`, so the public-API (read) tools never depend on a session.
+**Attendance writes use a separate session-cookie auth** (`web-client.ts`). The two write tools act against the logged-in **website** (Apache Wicket), which has no API key. `SetlistWebClient.requireCookie()` resolves auth in order: `SETLIST_SESSION_COOKIE` (env, read in the constructor) → the shared `createAuthResolver` skeleton from `@chrischall/mcp-utils` (`resolveSessionCookie()` in `fetchproxy-cookie.ts`, lazy-imported so the env path never loads the bridge; the bridge round-trip is bounded by a 15s `withDeadline`; disable with `SETLIST_DISABLE_FETCHPROXY`) → an actionable, deferred config error at request time (thrown by the resolver). A grabbed cookie is cached on the instance for the process. This client is kept entirely separate from the api-key `SetlistClient`, so the public-API (read) tools never depend on a session. Bundling note: the `@chrischall/mcp-utils/fetchproxy` subpath (and `@fetchproxy/*`) is deliberately **bundled, not externalized** — the `.mcpb` ships no node_modules, so externalizing it would kill the fallback; esbuild keeps the whole dynamically-imported graph lazily initialized (pinned by `tests/server-boot.test.ts`).
 
 ## Environment
 
@@ -80,7 +81,7 @@ Loaded via `dotenv` from `.env` next to `dist/` (guarded import; the mcpb bundle
 
 Tests live in `tests/` (vitest). No real API calls — `fetch` (in `client.test.ts`) and `client.request` (in tool tests) are mocked. `tests/server-boot.test.ts` spawns the real built artifacts (`dist/bundle.js` with no `node_modules`, and `dist/index.js`) and asserts the `initialize` + `tools/list` handshake.
 
-**Vitest gotcha (tool error-path tests):** when a `beforeEach(mockClear)` is in play, an *eager* `mockRejectedValue(...)` loses vitest's settled-result tracking and the rejection is mis-reported as unhandled, failing the test even though the handler caught it. Reject *lazily* instead: `mockRequest.mockImplementationOnce(() => Promise.reject(new Error(...)))`. See `tests/tools/utilities.test.ts`.
+**Vitest gotcha (tool error-path tests):** when a `beforeEach(mockClear)` is in play, an *eager* `mockRejectedValue(...)` loses vitest's settled-result tracking and the rejection is mis-reported as unhandled, failing the test even though the handler caught it. Reject *lazily* instead: `mockRequest.mockImplementationOnce(() => Promise.reject(new Error(...)))`. See `tests/tools/utilities.test.ts`. A cousin: a `beforeEach(() => mock.mockReset())` **hook** combined with a fake-timer test whose mock returns a never-settling promise wedges the test into a 10s "Hook timed out" failure even after the assertion passes — reset the mock *inline* at the top of each test instead. See `tests/fetchproxy-cookie.test.ts`.
 
 ## Versioning
 
