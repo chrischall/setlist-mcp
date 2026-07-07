@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.4](https://github.com/chrischall/setlist-mcp/compare/v0.7.3...v0.7.4) (2026-07-07)
+
+
+### Bug Fixes
+
+* bump @chrischall/mcp-utils to ^0.12.0 ([#50](https://github.com/chrischall/setlist-mcp/issues/50)) ([dca5296](https://github.com/chrischall/setlist-mcp/commit/dca52960a8818a16f495b17e7f9d1ccbaee9546e))
+
+
+### Refactor
+
+* adopt withDeadline + createAuthResolver; bump mcp-utils to 0.10.5 ([#46](https://github.com/chrischall/setlist-mcp/issues/46)) ([05d8c28](https://github.com/chrischall/setlist-mcp/commit/05d8c282f42afbb709750618a5d105485e7b72cd))
+
+
+### Documentation
+
+* document first-party dependency-bump label exception ([#51](https://github.com/chrischall/setlist-mcp/issues/51)) ([3291794](https://github.com/chrischall/setlist-mcp/commit/32917943ab6d86c171905248c32b8854035941a6))
+
 ## [0.7.3](https://github.com/chrischall/setlist-mcp/compare/v0.7.2...v0.7.3) (2026-06-15)
 
 
