@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0](https://github.com/chrischall/setlist-mcp/compare/v0.7.4...v0.8.0) (2026-07-13)
+
+
+### Features
+
+* **skill:** add setlist.fm fpx/curl access skill ([#55](https://github.com/chrischall/setlist-mcp/issues/55)) ([2e57c38](https://github.com/chrischall/setlist-mcp/commit/2e57c38041763464e33ef60419ffc00e71cd96ab))
+
+
+### Bug Fixes
+
+* **skill:** make attendance-write.md's perl parse order-independent ([#59](https://github.com/chrischall/setlist-mcp/issues/59)) ([1fc573d](https://github.com/chrischall/setlist-mcp/commit/1fc573db66a1e74629cf333d4dfb4003c52a1aff)), closes [#56](https://github.com/chrischall/setlist-mcp/issues/56)
+
+
+### Refactor
+
+* **skill:** move root SKILL.md into skills/, point plugin.json at ./skills/ ([#58](https://github.com/chrischall/setlist-mcp/issues/58)) ([c138479](https://github.com/chrischall/setlist-mcp/commit/c13847929c9957a62690db56ccdd6aa3e7bd5a9b))
+
 ## [0.7.4](https://github.com/chrischall/setlist-mcp/compare/v0.7.3...v0.7.4) (2026-07-07)
 
 
