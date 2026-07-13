@@ -45,20 +45,28 @@ The control is an `<a>` tag with a `wicketAjaxGet('...')` onclick and a
 - `"Remove this setlist from your attended shows."` → **currently** attended
 
 Extract both the per-render AJAX URL and the current state with `perl`
-(installed on macOS by default; handles the entity-escaped `&amp;` in the
-URL that a plain grep would mangle):
+(installed on macOS by default). For each `<a>` tag, check for
+`wicketAjaxGet(...)` and `title="..."` independently within the same
+800-char window — same as `src/tools/attendance.ts`'s `parseAttendance()` —
+rather than requiring `title=` to appear before `onclick=`, since real
+markup doesn't guarantee that ordering. Entity-decode the URL the same way
+`decodeEntities()` does: `&amp;` plus numeric character references
+(`&#x..;` hex and `&#..;` decimal), which a plain grep would mangle:
 
 ```sh
 read -r AJAX_URL CURRENTLY_ATTENDED < <(
   echo "$HTML" | perl -0777 -ne '
-    while (/<a\b(.{0,800}?)wicketAjaxGet\(\s*[\x27"]([^\x27"]+)[\x27"]/gs) {
-      my ($pre, $url) = ($1, $2);
-      if ($pre =~ /title="([^"]*attended shows[^"]*)"/) {
-        my $attended = $1 =~ /remove/i ? 1 : 0;
-        $url =~ s/&amp;/&/g;
-        print "$url $attended\n";
-        last;
-      }
+    while (/<a\b(.{0,800})/gs) {
+      my $seg = $1;
+      next unless $seg =~ /wicketAjaxGet\(\s*[\x27"]([^\x27"]+)[\x27"]/;
+      my $url = $1;
+      next unless $seg =~ /title="([^"]*attended shows[^"]*)"/;
+      my $attended = $1 =~ /remove/i ? 1 : 0;
+      $url =~ s/&amp;/&/g;
+      $url =~ s/&#x([0-9a-fA-F]+);/chr(hex($1))/ge;
+      $url =~ s/&#(\d+);/chr($1)/ge;
+      print "$url $attended\n";
+      last;
     }
   '
 )
@@ -113,12 +121,12 @@ parse:
 ```sh
 HTML2=$(curl -s "https://www.setlist.fm$PATH_ONLY" -H "Cookie: $COOKIE" -H "User-Agent: $UA")
 read -r _ NOW_ATTENDED < <(echo "$HTML2" | perl -0777 -ne '
-  while (/<a\b(.{0,800}?)wicketAjaxGet\(\s*[\x27"]([^\x27"]+)[\x27"]/gs) {
-    my ($pre, $url) = ($1, $2);
-    if ($pre =~ /title="([^"]*attended shows[^"]*)"/) {
-      print "x ", ($1 =~ /remove/i ? 1 : 0), "\n";
-      last;
-    }
+  while (/<a\b(.{0,800})/gs) {
+    my $seg = $1;
+    next unless $seg =~ /wicketAjaxGet/;
+    next unless $seg =~ /title="([^"]*attended shows[^"]*)"/;
+    print "x ", ($1 =~ /remove/i ? 1 : 0), "\n";
+    last;
   }
 ')
 
