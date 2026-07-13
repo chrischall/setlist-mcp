@@ -43,7 +43,7 @@ Get a free API key (non-commercial use) at [setlist.fm/settings/api](https://www
 
 Optional: `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`) localizes city/country names.
 
-See [SKILL.md](SKILL.md) for from-source setup, the full tool reference, and example flows.
+See [skills/setlist/SKILL.md](skills/setlist/SKILL.md) for from-source setup, the full tool reference, and example flows.
 
 ## Attribution & terms
 
