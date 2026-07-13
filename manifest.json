@@ -3,7 +3,7 @@
   "manifest_version": "0.3",
   "name": "setlist-mcp",
   "display_name": "setlist.fm",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "setlist.fm concert data for Claude — search setlists, artists, venues, tours, and cities via natural language",
   "author": {
     "name": "Chris Chall",
