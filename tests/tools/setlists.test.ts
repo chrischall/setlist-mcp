@@ -13,7 +13,7 @@ afterAll(async () => {
 
 describe('setlist tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerSetlistTools(server));
+    harness = await createTestHarness((server) => registerSetlistTools(server, client));
   });
 
   it('setlist_search_setlists forwards the provided filters as query', async () => {

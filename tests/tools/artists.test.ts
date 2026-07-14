@@ -13,7 +13,7 @@ afterAll(async () => {
 
 describe('artist tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerArtistTools(server));
+    harness = await createTestHarness((server) => registerArtistTools(server, client));
   });
 
   it('setlist_search_artists passes filters through query', async () => {

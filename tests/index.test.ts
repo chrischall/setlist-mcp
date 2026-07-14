@@ -7,6 +7,7 @@ import { registerUserTools } from '../src/tools/users.js';
 import { registerResolveTools } from '../src/tools/resolve.js';
 import { registerAttendanceTools } from '../src/tools/attendance.js';
 import { registerUtilityTools } from '../src/tools/utilities.js';
+import { client } from '../src/client.js';
 import { createTestHarness } from './helpers.js';
 
 // Verify the tool registry covers all expected tools. We register every tool on
@@ -20,14 +21,14 @@ describe('tool registry', () => {
 
   it('includes all 19 expected tools', async () => {
     harness = await createTestHarness((server) => {
-      registerArtistTools(server);
-      registerSetlistTools(server);
-      registerVenueTools(server);
-      registerGeoTools(server);
-      registerUserTools(server);
-      registerResolveTools(server);
-      registerAttendanceTools(server);
-      registerUtilityTools(server);
+      registerArtistTools(server, client);
+      registerSetlistTools(server, client);
+      registerVenueTools(server, client);
+      registerGeoTools(server, client);
+      registerUserTools(server, client);
+      registerResolveTools(server, client);
+      registerAttendanceTools(server, client);
+      registerUtilityTools(server, client);
     });
 
     const tools = await harness.listTools();

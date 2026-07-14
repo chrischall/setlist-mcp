@@ -126,6 +126,31 @@ describe('SetlistClient', () => {
     await assertion;
   });
 
+  it('uses an injected apiKey instead of the environment (per-user constructor seam)', async () => {
+    // The hosted per-user path builds a client with the caller's key; no env var
+    // is set. The injected key must reach the x-api-key header.
+    delete process.env.SETLIST_API_KEY;
+    stubFetch();
+    const c = new SetlistClient({ apiKey: 'injected-key' });
+
+    await c.request('GET', '/1.0/search/countries');
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init.headers['x-api-key']).toBe('injected-key');
+  });
+
+  it('falls back to the env var when opts carries no apiKey', async () => {
+    // An opts object with no apiKey must not shadow SETLIST_API_KEY — the env
+    // key still wins, so the stdio singleton path stays intact.
+    process.env.SETLIST_API_KEY = 'env-key';
+    stubFetch();
+    const c = new SetlistClient({});
+
+    await c.request('GET', '/1.0/search/countries');
+
+    expect(calls[0].init.headers['x-api-key']).toBe('env-key');
+  });
+
   it('defers the config error — constructs without a key, throws on first request', async () => {
     delete process.env.SETLIST_API_KEY;
     const fn = stubFetch();

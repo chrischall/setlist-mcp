@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult, isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
-import { client } from '../client.js';
+import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 // How to read a setlist's song data (per setlist.fm's guidelines), so the model
@@ -16,7 +16,7 @@ const page = z
   .optional()
   .describe('Result page number (defaults to 1)');
 
-export function registerSetlistTools(server: McpServer): void {
+export function registerSetlistTools(server: McpServer, client: SetlistClient): void {
   server.registerTool(
     'setlist_search_setlists',
     {

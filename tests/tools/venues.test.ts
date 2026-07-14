@@ -13,7 +13,7 @@ afterAll(async () => {
 
 describe('venue tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerVenueTools(server));
+    harness = await createTestHarness((server) => registerVenueTools(server, client));
   });
 
   it('setlist_search_venues forwards filters as query', async () => {
