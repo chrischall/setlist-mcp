@@ -13,8 +13,15 @@ import { augmentSetlists } from './augment.js';
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
 // lets .env override a host-provided value.
-const __dirname = dirname(fileURLToPath(import.meta.url));
-await loadDotenvSafely({ path: join(__dirname, '..', '.env'), override: false });
+// The try/catch guards the Cloudflare Worker runtime, where `import.meta.url`
+// is undefined and `fileURLToPath(undefined)` would throw at module init
+// (Worker startup validation) — there is no filesystem / .env to load there.
+try {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  await loadDotenvSafely({ path: join(dir, '..', '.env'), override: false });
+} catch {
+  /* non-Node runtime (Workers): no .env to load */
+}
 
 const BASE_URL = 'https://api.setlist.fm/rest';
 const SERVICE_NAME = 'setlist.fm';
