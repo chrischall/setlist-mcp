@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0](https://github.com/chrischall/setlist-mcp/compare/v0.8.0...v0.9.0) (2026-07-14)
+
+
+### Features
+
+* add hosted Cloudflare Worker connector (read-only v1) ([#62](https://github.com/chrischall/setlist-mcp/issues/62)) ([0869e50](https://github.com/chrischall/setlist-mcp/commit/0869e50199115fdefc4dedeccbad31bb0f8e2568))
+
+
+### Bug Fixes
+
+* guard client.ts .env load so the Worker starts + wire OAUTH_KV id ([#64](https://github.com/chrischall/setlist-mcp/issues/64)) ([3aa1dac](https://github.com/chrischall/setlist-mcp/commit/3aa1dacb93ddb0e31e0966063cbb7a0ecd22a197))
+
+
+### Refactor
+
+* pass client into tool registrars (transport-neutral) ([#60](https://github.com/chrischall/setlist-mcp/issues/60)) ([7786704](https://github.com/chrischall/setlist-mcp/commit/7786704193de857cce4a9f4d81e22197df9c516e))
+
 ## [0.8.0](https://github.com/chrischall/setlist-mcp/compare/v0.7.4...v0.8.0) (2026-07-13)
 
 
