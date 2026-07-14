@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
-import { client } from '../client.js';
+import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const page = z
@@ -11,7 +11,7 @@ const page = z
   .optional()
   .describe('Result page number (defaults to 1)');
 
-export function registerGeoTools(server: McpServer): void {
+export function registerGeoTools(server: McpServer, client: SetlistClient): void {
   server.registerTool(
     'setlist_search_cities',
     {

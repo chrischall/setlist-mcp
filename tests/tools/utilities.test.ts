@@ -17,7 +17,7 @@ function parse(result: { content: { text: string }[] }): Record<string, unknown>
 
 describe('utility tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerUtilityTools(server));
+    harness = await createTestHarness((server) => registerUtilityTools(server, client));
   });
 
   it('setlist_healthcheck reports ok with a country count on success', async () => {

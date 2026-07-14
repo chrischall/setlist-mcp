@@ -52,7 +52,7 @@ describe('attendance tools', () => {
   afterAll(async () => { if (harness) await harness.close(); });
   const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
 
-  it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s)); });
+  it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
 
   it('mark (confirm) toggles when not attended and verifies via re-read', async () => {
     mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);

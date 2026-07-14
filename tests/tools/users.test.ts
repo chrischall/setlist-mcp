@@ -13,7 +13,7 @@ afterAll(async () => {
 
 describe('user tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerUserTools(server));
+    harness = await createTestHarness((server) => registerUserTools(server, client));
   });
 
   it('setlist_get_user hits /1.0/user/{userId}', async () => {

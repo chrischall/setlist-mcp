@@ -9,6 +9,7 @@ import { registerAttendanceTools } from '../../src/tools/attendance.js';
 import { registerUrlTools } from '../../src/tools/urls.js';
 import { registerUtilityTools } from '../../src/tools/utilities.js';
 import { ATTRIBUTION_NOTE } from '../../src/attribution.js';
+import { client } from '../../src/client.js';
 import { createTestHarness } from '../helpers.js';
 
 // setlist.fm's API terms require followable attribution wherever their data is
@@ -29,15 +30,15 @@ describe('attribution coverage', () => {
     expect(ATTRIBUTION_NOTE).toContain(MARKER); // guards the marker if the note is reworded
 
     harness = await createTestHarness((server) => {
-      registerArtistTools(server);
-      registerSetlistTools(server);
-      registerVenueTools(server);
-      registerGeoTools(server);
-      registerUserTools(server);
-      registerResolveTools(server);
-      registerAttendanceTools(server);
+      registerArtistTools(server, client);
+      registerSetlistTools(server, client);
+      registerVenueTools(server, client);
+      registerGeoTools(server, client);
+      registerUserTools(server, client);
+      registerResolveTools(server, client);
+      registerAttendanceTools(server, client);
       registerUrlTools(server);
-      registerUtilityTools(server);
+      registerUtilityTools(server, client);
     });
 
     // harness.listTools() returns names only; read full descriptions via the

@@ -235,7 +235,7 @@ describe('setlist_resolve_concerts tool', () => {
   const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
 
   it('setup', async () => {
-    harness = await createTestHarness((s) => registerResolveTools(s));
+    harness = await createTestHarness((s) => registerResolveTools(s, client));
   });
 
   it('registers the tool and returns results + summary', async () => {

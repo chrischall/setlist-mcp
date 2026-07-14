@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult, isoToDmy, createThrottle, ApiError } from '@chrischall/mcp-utils';
-import { client } from '../client.js';
+import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const MAX_BATCH = 24;
@@ -17,7 +17,14 @@ type Query = Record<string, string | undefined>;
 type RequestFn = <T>(method: string, path: string, opts?: { query?: Query }) => Promise<T>;
 
 export interface ResolveDeps {
-  request?: RequestFn;
+  /**
+   * Upstream request function. Required — the caller (the registrar, or a test)
+   * supplies it, threading in whichever {@link SetlistClient} it holds. Keeping
+   * the client out of this module is what makes the tool transport-neutral: the
+   * stdio path passes the env-configured singleton, a hosted per-user deployment
+   * passes a client built with that user's injected key.
+   */
+  request: RequestFn;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
   paceMs?: number;
@@ -258,8 +265,8 @@ const defaultSleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
  * wall-clock budget is spent, so a large batch returns partial results instead
  * of timing the whole call out. Exported for testing.
  */
-export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps = {}): Promise<ResolveResult[]> {
-  const baseRequest: RequestFn = deps.request ?? ((m, p, o) => client.request(m, p, o));
+export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps): Promise<ResolveResult[]> {
+  const baseRequest: RequestFn = deps.request;
   const sleep = deps.sleep ?? defaultSleep;
   const now = deps.now ?? Date.now;
   const paceMs = deps.paceMs ?? PACE_MS;
@@ -307,7 +314,7 @@ export function summarizeResults(results: ResolveResult[]): Record<string, unkno
   return payload;
 }
 
-export function registerResolveTools(server: McpServer): void {
+export function registerResolveTools(server: McpServer, client: SetlistClient): void {
   server.registerTool(
     'setlist_resolve_concerts',
     {
@@ -335,7 +342,10 @@ export function registerResolveTools(server: McpServer): void {
       },
     },
     async ({ concerts, tourFallback }) => {
-      const results = await resolveConcerts(concerts, { tourFallback });
+      const results = await resolveConcerts(concerts, {
+        tourFallback,
+        request: (m, p, o) => client.request(m, p, o),
+      });
       return textResult(summarizeResults(results));
     },
   );

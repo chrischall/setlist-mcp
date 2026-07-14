@@ -35,9 +35,15 @@ export class SetlistClient {
    * Defer the config error so the server can still start (and answer the host's
    * install-time tools/list smoke test) when SETLIST_API_KEY isn't set yet.
    * Tool calls re-raise the error at request time via {@link requireKey}.
+   *
+   * `opts.apiKey` is an optional constructor seam: a hosted, per-user deployment
+   * (e.g. the Cloudflare Worker connector) builds one client per request with
+   * that user's injected key instead of the process-wide env var. Left unset by
+   * the stdio path, which falls back to `SETLIST_API_KEY` exactly as before —
+   * keeping that behaviour byte-for-byte identical.
    */
-  constructor() {
-    const key = readEnvVar('SETLIST_API_KEY');
+  constructor(opts?: { apiKey?: string }) {
+    const key = opts?.apiKey ?? readEnvVar('SETLIST_API_KEY');
     if (!key) {
       this.apiKey = null;
       this.configError = new Error('SETLIST_API_KEY environment variable is required');

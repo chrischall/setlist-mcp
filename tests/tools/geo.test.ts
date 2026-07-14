@@ -13,7 +13,7 @@ afterAll(async () => {
 
 describe('geo tools', () => {
   it('setup', async () => {
-    harness = await createTestHarness((server) => registerGeoTools(server));
+    harness = await createTestHarness((server) => registerGeoTools(server, client));
   });
 
   it('setlist_search_cities forwards filters as query', async () => {

@@ -1,13 +1,13 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult, toolAnnotations, messageOf } from '@chrischall/mcp-utils';
-import { client } from '../client.js';
+import type { SetlistClient } from '../client.js';
 
 interface CountriesResponse {
   total?: number;
   country?: unknown[];
 }
 
-export function registerUtilityTools(server: McpServer): void {
+export function registerUtilityTools(server: McpServer, client: SetlistClient): void {
   server.registerTool(
     'setlist_healthcheck',
     {
