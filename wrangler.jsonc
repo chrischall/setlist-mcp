@@ -11,11 +11,11 @@
     "bindings": [{ "name": "MCP_OBJECT", "class_name": "SetlistMcpAgent" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SetlistMcpAgent"] }],
-  // setlist-connector's own OAuth token store. Kept separate from any other
-  // connector's OAUTH_KV so their OAuth grants/tokens never cross-wire. To stand
-  // up a deployment, create your own (wrangler kv namespace create OAUTH_KV) and
-  // replace this placeholder id (see docs/DEPLOY-CONNECTOR.md).
-  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_OAUTH_KV_NAMESPACE_ID" }],
+  // setlist-connector's own OAuth token store (title: setlist-connector-oauth).
+  // Kept separate from any other connector's OAUTH_KV so their OAuth grants/tokens
+  // never cross-wire. To stand up a deployment in a different account, create your
+  // own (wrangler kv namespace create setlist-connector-oauth) and replace this id.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "504dd4721d73452582f588fbd5b3259f" }],
   // Production custom domain (matches ofw-connector's connector.ofw.nullnet.app
   // and untappd-mcp's connector.untappd.nullnet.app). The zone must be in the
   // deploying account's Cloudflare; wrangler provisions the hostname on deploy.
