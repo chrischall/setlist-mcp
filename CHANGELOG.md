@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.1](https://github.com/chrischall/setlist-mcp/compare/v0.9.0...v0.9.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **ci:** run the Workers test pool in CI ([#67](https://github.com/chrischall/setlist-mcp/issues/67)) ([19c0a42](https://github.com/chrischall/setlist-mcp/commit/19c0a4208db2a83abe331641f95449ff501ac3c0))
+
+
+### Documentation
+
+* replace duplicated fleet policy with a pointer ([#65](https://github.com/chrischall/setlist-mcp/issues/65)) ([9e698e4](https://github.com/chrischall/setlist-mcp/commit/9e698e4b5e42e1a4b0c0e335627acb3dd793383a))
+
 ## [0.9.0](https://github.com/chrischall/setlist-mcp/compare/v0.8.0...v0.9.0) (2026-07-14)
 
 
