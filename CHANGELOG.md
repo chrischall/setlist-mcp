@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/chrischall/setlist-mcp/compare/v0.9.1...v0.9.2) (2026-07-19)
+
+
+### Bug Fixes
+
+* **deps:** move to workers-oauth-provider 0.8.x and mcp-connector 1.0.0 ([#68](https://github.com/chrischall/setlist-mcp/issues/68)) ([3c39ce0](https://github.com/chrischall/setlist-mcp/commit/3c39ce0ecb0fa7fd64c37f24d9794d3bebbe86cf))
+
 ## [0.9.1](https://github.com/chrischall/setlist-mcp/compare/v0.9.0...v0.9.1) (2026-07-19)
 
 
