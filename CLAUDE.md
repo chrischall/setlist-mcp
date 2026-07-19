@@ -91,29 +91,17 @@ Version lives in `src/version.ts` (`VERSION`, marked `// x-release-please-versio
 
 The MCP Registry caps `server.json`'s `description` at **100 characters** — over that, `mcp-publisher publish` 422s. Check with `jq -r '.description | length' server.json`.
 
-<!-- pr-workflow:v2 -->
+<!-- pr-workflow:v3 -->
 ## Pull requests & release notes
 
-**Default workflow: branch + PR, even for solo work.** Apply exactly one release-notes label per PR (`enhancement`, `bug`, `security`, `refactor`, `documentation`, `test`, `dependencies`, `ci`/`github_actions`, or `ignore-for-release`). The PR title becomes the changelog bullet.
+Fleet policy — Conventional-Commit PR titles, labels, the auto-review /
+auto-merge ladder, auto-review follow-up issues, PR timing, and release PRs —
+lives in `~/.claude/CLAUDE.md`. Don't restate it here; the copies drifted.
 
-**Exception for first-party dependency bumps.** When bumping a package we own (`@chrischall/mcp-utils`, `@chrischall/realty-core`, `@fetchproxy/server` — anything published from a chrischall-owned repo), label the PR `enhancement` or `bug` instead of `dependencies`, and use the matching Conventional-Commit prefix (`feat:` or `fix:`) instead of `chore:`/`build(deps):`. Those bumps deliver real product fixes or features through us, so they should drive a release-please version bump and show up under Features/Bug Fixes in the release notes — not get hidden under "Dependencies" (which doesn't trigger a release).
-
-The **PR title MUST be a Conventional Commit**, written user-facing (`fix(scope): …`, `feat(scope): …`), not internal shorthand. Because the repo squash-merges, the PR title *becomes the squash commit's subject line* — the only thing release-please parses to pick the version bump and changelog section. Only `feat` (minor), `fix` (patch), and `!`/`BREAKING CHANGE` (major) cut a release; `perf`/`refactor`/`docs` show in the changelog without bumping; `ci`/`test`/`build`/`chore` are recognised but hidden (see `release-please-config.json` → `changelog-sections`). A title without a conventional type is invisible to release-please — no bump, no changelog line. Prefixes in *individual commits* don't help; squash keeps only the title.
-
-**Don't merge PRs yourself.** `pr-auto-review.yml` reviews every PR and arms `ready-to-merge` on a `pass` OR `warn` verdict; `auto-merge.yml` then squash-merges once CI is green. A `warn` (nits only) or `fail` verdict also opens/updates a follow-up issue (see below); only `fail` blocks the merge. Open a PR only when the change is COMPLETE in a single push — auto-merge ships it the moment review passes, and later commits orphan onto a stale branch. Need a checkpoint without shipping? Open it `--draft` (auto-review skips drafts).
-
-### Auto-review follow-up issues
-
-When a PR's auto-review verdict is `warn` or `fail`, the `chrischall/workflows` pipeline opens or updates a single `auto-review-followup` issue ("Auto-review follow-ups for PR #N") whose checklist captures every finding, and links it from the PR's `<!-- auto-review-verdict -->` comment (`📋 Tracking follow-ups: #N`). `warn` (nits only) still auto-merges — the issue carries the nits forward, so most nits are fixed in a *later* PR; `fail` blocks until the important findings are addressed on the PR itself.
-
-When asked to address the auto-review comments / review findings on a PR:
-
-1. Read the verdict comment, open the linked `auto-review-followup` issue, and treat its checklist as the work list (alongside any inline review comments).
-2. Resolve each item, checking off only what you've **verified** is genuinely fixed.
-3. If every item is resolved on the current PR, add `Closes #<issue>` to that PR's body so the merge closes it; if some are deferred, check off only the resolved ones and leave the issue open.
-4. For nits whose `warn` PR already auto-merged, address them in a follow-up PR that references `Closes #<issue>`.
-
-(Mirrors the fleet-wide convention in `~/.claude/CLAUDE.md`.)
+Shared technical conventions (publishing, bundling, versioning guards,
+write-verification, transport archetypes, testing traps) live in
+[`chrischall/workflows`](https://github.com/chrischall/workflows):
+`docs/fleet-conventions.md`, plus `README.md` for the CI pipeline contract.
 
 ## API terms (compliance — don't regress these)
 
