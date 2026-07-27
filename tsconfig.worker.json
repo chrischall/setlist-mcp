@@ -1,0 +1,18 @@
+{
+  // The Worker entry is excluded from tsconfig.json because it imports
+  // `cloudflare:workers` and Workers globals the node build has no types for —
+  // so `tsc` / `npm run build` never type-checked it, and `worker:test` runs
+  // through esbuild/Miniflare, which strips types without checking them. A type
+  // error in worker.ts therefore reached production silently.
+  //
+  // This config type-checks that file and nothing else: same compiler options,
+  // no emit. Both type sets are needed — worker.ts pulls in the shared client,
+  // which is node-typed.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "@cloudflare/workers-types"],
+    "noEmit": true
+  },
+  "include": ["src/worker.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -42,6 +42,7 @@
     "test:coverage": "vitest run --coverage",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
+    "worker:typecheck": "tsc --noEmit -p tsconfig.worker.json",
     "worker:test": "vitest run --config vitest.workers.config.ts"
   },
   "dependencies": {
