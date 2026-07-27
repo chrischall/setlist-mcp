@@ -22,5 +22,10 @@ jobs:
     with:
       node-version: "26"
       build-command: npm run build
-      test-command: npm test && npm run worker:test
+      # worker:typecheck before worker:test: src/worker.ts is excluded from
+      # tsconfig.json, and the Workers pool runs it through esbuild/Miniflare,
+      # which STRIPS types rather than checking them. Without this the Worker
+      # entry — the whole hosted connector — is the one file CI never
+      # type-checks, and a type error reaches production green.
+      test-command: npm test && npm run worker:typecheck && npm run worker:test
       gate-mode: status
