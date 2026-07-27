@@ -2,7 +2,7 @@
   "name": "setlist-mcp",
   "version": "0.9.2",
   "mcpName": "io.github.chrischall/setlist-mcp",
-  "description": "setlist.fm MCP server for Claude — developed and maintained by AI (Claude Code)",
+  "description": "setlist.fm MCP server for Claude \u2014 developed and maintained by AI (Claude Code)",
   "author": "Claude Code (AI) <https://www.anthropic.com/claude>",
   "repository": {
     "type": "git",
@@ -53,7 +53,7 @@
     "zod": "^4.4.2"
   },
   "devDependencies": {
-    "@chrischall/mcp-connector": "^1.0.0",
+    "@chrischall/mcp-connector": "^1.1.1",
     "@cloudflare/vitest-pool-workers": "^0.18.4",
     "@cloudflare/workers-oauth-provider": "^0.8.1",
     "@cloudflare/workers-types": "^5.20260708.1",
