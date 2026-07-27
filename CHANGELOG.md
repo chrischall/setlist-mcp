@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/chrischall/setlist-mcp/compare/v0.9.2...v0.9.3) (2026-07-27)
+
+
+### Bug Fixes
+
+* **deps:** require @chrischall/mcp-connector &gt;=1.1.1 ([#78](https://github.com/chrischall/setlist-mcp/issues/78)) ([f843703](https://github.com/chrischall/setlist-mcp/commit/f84370372bd5e149d991086f910b7538af35f9e1))
+
 ## [0.9.2](https://github.com/chrischall/setlist-mcp/compare/v0.9.1...v0.9.2) (2026-07-19)
 
 
