@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.4](https://github.com/chrischall/setlist-mcp/compare/v0.9.3...v0.9.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **deps:** bump @fetchproxy/* to 1.7.0 and @chrischall/mcp-utils to 0.14.0 ([#85](https://github.com/chrischall/setlist-mcp/issues/85)) ([fe8af94](https://github.com/chrischall/setlist-mcp/commit/fe8af94fd9fa85e251a2077932eef2edfa962fdb))
+
 ## [0.9.3](https://github.com/chrischall/setlist-mcp/compare/v0.9.2...v0.9.3) (2026-07-27)
 
 
