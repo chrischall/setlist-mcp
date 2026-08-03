@@ -83,6 +83,8 @@ export class SetlistWebClient {
   private cookieSource: 'env' | 'lift' | null;
   /** In-flight re-lift, shared by concurrent callers. See {@link relift}. */
   private reliftInFlight: Promise<boolean> | null = null;
+  /** In-flight cookie resolve, shared so one session needs one bridge trip. */
+  private resolveInFlight: Promise<string> | null = null;
   private readonly api: ApiClient;
   private readonly throttle: Throttle;
 
@@ -120,11 +122,22 @@ export class SetlistWebClient {
    */
   private async requireCookie(): Promise<string> {
     if (this.cookie) return this.cookie;
-    const { resolveSessionCookie } = await import('./fetchproxy-cookie.js');
-    const { cookieHeader } = await resolveSessionCookie();
-    this.cookie = cookieHeader;
-    this.cookieSource = 'lift';
-    return cookieHeader;
+    // Single-flighted, not just cached. relift() shares an in-flight RE-lift,
+    // but the window it opens — cookie momentarily null — is exactly when a
+    // concurrent request can arrive here and start a second bridge round-trip
+    // for the same session. Sharing the resolve closes that window too.
+    if (this.resolveInFlight) return this.resolveInFlight;
+    const p = (async () => {
+      const { resolveSessionCookie } = await import('./fetchproxy-cookie.js');
+      const { cookieHeader } = await resolveSessionCookie();
+      this.cookie = cookieHeader;
+      this.cookieSource = 'lift';
+      return cookieHeader;
+    })().finally(() => {
+      if (this.resolveInFlight === p) this.resolveInFlight = null;
+    });
+    this.resolveInFlight = p;
+    return p;
   }
 
   /**

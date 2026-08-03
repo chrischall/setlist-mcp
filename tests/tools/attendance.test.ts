@@ -120,15 +120,15 @@ describe('attendance — expired browser session', () => {
   const mockApi = vi.spyOn(client, 'request').mockResolvedValue(meta as never);
   const mockPage = vi.spyOn(webClient, 'fetchPage').mockResolvedValue('');
   const mockAjax = vi.spyOn(webClient, 'wicketAjaxGet').mockResolvedValue('<ajax-response/>');
-  let mockInvalidate: ReturnType<typeof vi.spyOn>;
+  let mockRelift: ReturnType<typeof vi.spyOn>;
   let harness: Awaited<ReturnType<typeof createTestHarness>>;
 
   beforeEach(() => {
     mockApi.mockClear().mockResolvedValue(meta as never);
     mockPage.mockReset();
     mockAjax.mockClear().mockResolvedValue('<ajax-response/>');
-    mockInvalidate = vi.spyOn(webClient, 'relift');
-    mockInvalidate.mockClear();
+    mockRelift = vi.spyOn(webClient, 'relift');
+    mockRelift.mockClear();
   });
   afterAll(async () => { if (harness) await harness.close(); });
   const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
@@ -136,17 +136,17 @@ describe('attendance — expired browser session', () => {
   it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
 
   it('re-lifts and re-reads once when the page renders logged-out', async () => {
-    mockInvalidate.mockResolvedValue(true); // a browser-lifted cookie: renewable
+    mockRelift.mockResolvedValue(true); // a browser-lifted cookie: renewable
     mockPage.mockResolvedValueOnce(LOGGED_OUT).mockResolvedValueOnce(NOT_ATTENDED);
 
     const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false }));
     expect(out).toMatchObject({ currentlyAttended: false, dryRun: true });
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(mockRelift).toHaveBeenCalledTimes(1);
     expect(mockPage).toHaveBeenCalledTimes(2);
   });
 
   it('still fails when the session is genuinely dead after the re-lift', async () => {
-    mockInvalidate.mockResolvedValue(true);
+    mockRelift.mockResolvedValue(true);
     mockPage.mockResolvedValue(LOGGED_OUT);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();
@@ -156,7 +156,7 @@ describe('attendance — expired browser session', () => {
   });
 
   it('does NOT retry an env-supplied cookie — it is static', async () => {
-    mockInvalidate.mockResolvedValue(false); // nothing renewable to drop
+    mockRelift.mockResolvedValue(false); // nothing renewable to drop
     mockPage.mockResolvedValue(LOGGED_OUT);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();
@@ -167,12 +167,12 @@ describe('attendance — expired browser session', () => {
   it('leaves the ambiguous no-control case alone (no re-lift)', async () => {
     // Neither a control nor a sign-in link: a throttle/interstitial, not an
     // expiry. Burning a bridge round-trip on it would be wrong.
-    mockInvalidate.mockResolvedValue(true);
+    mockRelift.mockResolvedValue(true);
     mockPage.mockResolvedValue(UNEXPECTED);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();
     expect((res.content[0] as { text: string }).text).toMatch(/Could not find the attendance control/i);
-    expect(mockInvalidate).not.toHaveBeenCalled();
+    expect(mockRelift).not.toHaveBeenCalled();
     expect(mockPage).toHaveBeenCalledTimes(1);
   });
 });
