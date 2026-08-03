@@ -105,3 +105,74 @@ describe('attendance tools', () => {
     expect(text).toMatch(/control/i);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Re-lifting an expired browser session
+// ────────────────────────────────────────────────────────────────────────────
+//
+// looksLoggedOut() already detected the dead session and raised an actionable
+// error — but nothing acted on it. The fetchproxy cookie was resolved once and
+// cached on the client "for the process", so every later call replayed the
+// same dead cookie. The user's only recourse was restarting the MCP, even
+// though the browser usually still held a live session.
+describe('attendance — expired browser session', () => {
+  const meta = { url: 'https://www.setlist.fm/setlist/a/2025/v-1234.html', artist: { name: 'A' }, eventDate: '2025-01-01', venue: { name: 'V', city: { name: 'C' } } };
+  const mockApi = vi.spyOn(client, 'request').mockResolvedValue(meta as never);
+  const mockPage = vi.spyOn(webClient, 'fetchPage').mockResolvedValue('');
+  const mockAjax = vi.spyOn(webClient, 'wicketAjaxGet').mockResolvedValue('<ajax-response/>');
+  let mockInvalidate: ReturnType<typeof vi.spyOn>;
+  let harness: Awaited<ReturnType<typeof createTestHarness>>;
+
+  beforeEach(() => {
+    mockApi.mockClear().mockResolvedValue(meta as never);
+    mockPage.mockReset();
+    mockAjax.mockClear().mockResolvedValue('<ajax-response/>');
+    mockInvalidate = vi.spyOn(webClient, 'invalidateLiftedCookie');
+    mockInvalidate.mockClear();
+  });
+  afterAll(async () => { if (harness) await harness.close(); });
+  const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
+
+  it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
+
+  it('re-lifts and re-reads once when the page renders logged-out', async () => {
+    mockInvalidate.mockReturnValue(true); // a browser-lifted cookie: renewable
+    mockPage.mockResolvedValueOnce(LOGGED_OUT).mockResolvedValueOnce(NOT_ATTENDED);
+
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false }));
+    expect(out).toMatchObject({ currentlyAttended: false, dryRun: true });
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(mockPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('still fails when the session is genuinely dead after the re-lift', async () => {
+    mockInvalidate.mockReturnValue(true);
+    mockPage.mockResolvedValue(LOGGED_OUT);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    expect(res.isError).toBeTruthy();
+    expect((res.content[0] as { text: string }).text).toMatch(/signed out|logged-out/i);
+    // Exactly one retry — no loop.
+    expect(mockPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('does NOT retry an env-supplied cookie — it is static', async () => {
+    mockInvalidate.mockReturnValue(false); // nothing renewable to drop
+    mockPage.mockResolvedValue(LOGGED_OUT);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    expect(res.isError).toBeTruthy();
+    expect((res.content[0] as { text: string }).text).toMatch(/signed out|logged-out/i);
+    expect(mockPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the ambiguous no-control case alone (no re-lift)', async () => {
+    // Neither a control nor a sign-in link: a throttle/interstitial, not an
+    // expiry. Burning a bridge round-trip on it would be wrong.
+    mockInvalidate.mockReturnValue(true);
+    mockPage.mockResolvedValue(UNEXPECTED);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    expect(res.isError).toBeTruthy();
+    expect((res.content[0] as { text: string }).text).toMatch(/Could not find the attendance control/i);
+    expect(mockInvalidate).not.toHaveBeenCalled();
+    expect(mockPage).toHaveBeenCalledTimes(1);
+  });
+});
