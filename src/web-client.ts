@@ -81,6 +81,8 @@ export class SetlistWebClient {
    * behalf would burn a bridge round-trip to produce the same dead value.
    */
   private cookieSource: 'env' | 'lift' | null;
+  /** In-flight re-lift, shared by concurrent callers. See {@link relift}. */
+  private reliftInFlight: Promise<boolean> | null = null;
   private readonly api: ApiClient;
   private readonly throttle: Throttle;
 
@@ -126,7 +128,7 @@ export class SetlistWebClient {
   }
 
   /**
-   * Drop a browser-lifted cookie so the next request re-reads the tab.
+   * Re-read the browser session, replacing a stale lifted cookie.
    *
    * Callers detect the dead session themselves — a logged-out setlist.fm page
    * renders with a sign-in link and no authenticated controls, which is a
@@ -134,14 +136,30 @@ export class SetlistWebClient {
    * cookie outlived the session it represented: the first expiry wedged the
    * client for the whole process even though the browser was still signed in.
    *
-   * Returns false when there is nothing worth re-lifting (env-supplied, or
-   * never resolved), so callers can skip a pointless re-read.
+   * Single-flighted on purpose. The write throttle serializes *requests*, but
+   * callers invalidate from the tool layer outside it, so two concurrent
+   * attendance writes could both see a logged-out page and race: the first
+   * clears the cookie, the second finds nothing lifted to clear, concludes
+   * there is no renewal available, and gives up while a perfectly good re-lift
+   * is in flight. Sharing one in-flight lift means both callers get the same
+   * answer and neither skips its retry.
+   *
+   * Returns false when there is nothing worth re-lifting (env-supplied cookie,
+   * or none resolved), so callers can skip a pointless re-read.
    */
-  invalidateLiftedCookie(): boolean {
+  async relift(): Promise<boolean> {
+    if (this.reliftInFlight) return this.reliftInFlight;
     if (this.cookieSource !== 'lift') return false;
-    this.cookie = null;
-    this.cookieSource = null;
-    return true;
+    const p = (async () => {
+      this.cookie = null;
+      this.cookieSource = null;
+      await this.requireCookie();
+      return true;
+    })().finally(() => {
+      if (this.reliftInFlight === p) this.reliftInFlight = null;
+    });
+    this.reliftInFlight = p;
+    return p;
   }
 
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */
