@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.5](https://github.com/chrischall/setlist-mcp/compare/v0.9.4...v0.9.5) (2026-08-03)
+
+
+### Bug Fixes
+
+* **attendance:** re-lift an expired browser session instead of wedging ([#90](https://github.com/chrischall/setlist-mcp/issues/90)) ([ceb3432](https://github.com/chrischall/setlist-mcp/commit/ceb3432654385eabe8618d64f3d98923c05597c0))
+* **web-client:** single-flight requireCookie and land the doc I claimed ([#95](https://github.com/chrischall/setlist-mcp/issues/95)) ([5c4a02f](https://github.com/chrischall/setlist-mcp/commit/5c4a02f2545d510ef6eeaa7cb604be85da992f78)), closes [#94](https://github.com/chrischall/setlist-mcp/issues/94)
+* **web-client:** single-flight the re-lift so concurrent writes can't race ([#93](https://github.com/chrischall/setlist-mcp/issues/93)) ([89c4795](https://github.com/chrischall/setlist-mcp/commit/89c4795bf06da5a4c8b772959d183e3012c2c59b)), closes [#91](https://github.com/chrischall/setlist-mcp/issues/91)
+
 ## [0.9.4](https://github.com/chrischall/setlist-mcp/compare/v0.9.3...v0.9.4) (2026-07-30)
 
 
