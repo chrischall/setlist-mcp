@@ -45,7 +45,8 @@ export function looksLoggedOut(html: string): boolean {
 
 const SESSION_EXPIRED_MSG =
   'Your setlist.fm session is signed out or expired — the page rendered logged-out. ' +
-  'Re-copy SETLIST_SESSION_COOKIE from a logged-in www.setlist.fm request (or re-pair the fetchproxy browser bridge), then retry.';
+  'Sign back into www.setlist.fm in your browser and retry — the bridge re-reads the tab on the next call. ' +
+  'If you authenticate with an env cookie instead, re-copy SETLIST_SESSION_COOKIE from a logged-in request.';
 
 const CONTROL_MISSING_MSG =
   'Could not find the attendance control on the setlist page. Your session may have expired ' +
@@ -96,14 +97,30 @@ async function setAttendance(
     city: meta.venue?.city?.name,
   };
 
-  const html = await webClient.fetchPage(path);
-  const control = parseAttendance(html);
+  let html = await webClient.fetchPage(path);
+  let control = parseAttendance(html);
   if (!control) {
     // The control is absent on a logged-out page. Distinguish a dead session
     // (the common mid-batch failure) from an ambiguous miss so the caller gets
     // an actionable message instead of one opaque error.
-    if (looksLoggedOut(html)) throw new SessionExpiredError(SESSION_EXPIRED_MSG);
-    throw new Error(CONTROL_MISSING_MSG);
+    if (looksLoggedOut(html)) {
+      // A browser-lifted cookie is worth exactly one re-lift: the tab usually
+      // still holds a live session and the copy we cached is only stale
+      // because we cached it. Env cookies are static, so they fail fast.
+      // Deliberately NOT applied to the ambiguous branch below — a throttle
+      // interstitial is not an expiry, and re-lifting on it would burn a
+      // bridge round-trip for nothing.
+      if (webClient.invalidateLiftedCookie()) {
+        html = await webClient.fetchPage(path);
+        control = parseAttendance(html);
+      }
+      if (!control) {
+        if (looksLoggedOut(html)) throw new SessionExpiredError(SESSION_EXPIRED_MSG);
+        throw new Error(CONTROL_MISSING_MSG);
+      }
+    } else {
+      throw new Error(CONTROL_MISSING_MSG);
+    }
   }
 
   if (control.attended === desired) {

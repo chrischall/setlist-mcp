@@ -75,11 +75,18 @@ const USER_AGENT =
  */
 export class SetlistWebClient {
   private cookie: string | null;
+  /**
+   * Where `cookie` came from. Only a browser-lifted cookie can be renewed —
+   * an env-supplied `SETLIST_SESSION_COOKIE` is static, so re-lifting on its
+   * behalf would burn a bridge round-trip to produce the same dead value.
+   */
+  private cookieSource: 'env' | 'lift' | null;
   private readonly api: ApiClient;
   private readonly throttle: Throttle;
 
   constructor(deps: WebClientDeps = {}) {
     this.cookie = readEnvVar('SETLIST_SESSION_COOKIE') ?? null;
+    this.cookieSource = this.cookie ? 'env' : null;
     this.api =
       deps.api ??
       createApiClient({
@@ -114,7 +121,27 @@ export class SetlistWebClient {
     const { resolveSessionCookie } = await import('./fetchproxy-cookie.js');
     const { cookieHeader } = await resolveSessionCookie();
     this.cookie = cookieHeader;
+    this.cookieSource = 'lift';
     return cookieHeader;
+  }
+
+  /**
+   * Drop a browser-lifted cookie so the next request re-reads the tab.
+   *
+   * Callers detect the dead session themselves — a logged-out setlist.fm page
+   * renders with a sign-in link and no authenticated controls, which is a
+   * page-shape signal this transport cannot see. Without this the cached
+   * cookie outlived the session it represented: the first expiry wedged the
+   * client for the whole process even though the browser was still signed in.
+   *
+   * Returns false when there is nothing worth re-lifting (env-supplied, or
+   * never resolved), so callers can skip a pointless re-read.
+   */
+  invalidateLiftedCookie(): boolean {
+    if (this.cookieSource !== 'lift') return false;
+    this.cookie = null;
+    this.cookieSource = null;
+    return true;
   }
 
   /** GET a page as HTML, authenticated. `path` is appended to the www base URL. */
