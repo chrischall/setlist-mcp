@@ -127,7 +127,7 @@ describe('attendance — expired browser session', () => {
     mockApi.mockClear().mockResolvedValue(meta as never);
     mockPage.mockReset();
     mockAjax.mockClear().mockResolvedValue('<ajax-response/>');
-    mockInvalidate = vi.spyOn(webClient, 'invalidateLiftedCookie');
+    mockInvalidate = vi.spyOn(webClient, 'relift');
     mockInvalidate.mockClear();
   });
   afterAll(async () => { if (harness) await harness.close(); });
@@ -136,7 +136,7 @@ describe('attendance — expired browser session', () => {
   it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
 
   it('re-lifts and re-reads once when the page renders logged-out', async () => {
-    mockInvalidate.mockReturnValue(true); // a browser-lifted cookie: renewable
+    mockInvalidate.mockResolvedValue(true); // a browser-lifted cookie: renewable
     mockPage.mockResolvedValueOnce(LOGGED_OUT).mockResolvedValueOnce(NOT_ATTENDED);
 
     const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false }));
@@ -146,7 +146,7 @@ describe('attendance — expired browser session', () => {
   });
 
   it('still fails when the session is genuinely dead after the re-lift', async () => {
-    mockInvalidate.mockReturnValue(true);
+    mockInvalidate.mockResolvedValue(true);
     mockPage.mockResolvedValue(LOGGED_OUT);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();
@@ -156,7 +156,7 @@ describe('attendance — expired browser session', () => {
   });
 
   it('does NOT retry an env-supplied cookie — it is static', async () => {
-    mockInvalidate.mockReturnValue(false); // nothing renewable to drop
+    mockInvalidate.mockResolvedValue(false); // nothing renewable to drop
     mockPage.mockResolvedValue(LOGGED_OUT);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();
@@ -167,7 +167,7 @@ describe('attendance — expired browser session', () => {
   it('leaves the ambiguous no-control case alone (no re-lift)', async () => {
     // Neither a control nor a sign-in link: a throttle/interstitial, not an
     // expiry. Burning a bridge round-trip on it would be wrong.
-    mockInvalidate.mockReturnValue(true);
+    mockInvalidate.mockResolvedValue(true);
     mockPage.mockResolvedValue(UNEXPECTED);
     const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
     expect(res.isError).toBeTruthy();

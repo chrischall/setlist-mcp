@@ -110,7 +110,7 @@ async function setAttendance(
       // Deliberately NOT applied to the ambiguous branch below — a throttle
       // interstitial is not an expiry, and re-lifting on it would burn a
       // bridge round-trip for nothing.
-      if (webClient.invalidateLiftedCookie()) {
+      if (await webClient.relift()) {
         html = await webClient.fetchPage(path);
         control = parseAttendance(html);
       }

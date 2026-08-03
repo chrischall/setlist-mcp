@@ -133,3 +133,42 @@ describe('SetlistWebClient', () => {
     expect(fn).not.toHaveBeenCalled();
   });
 });
+
+describe('SetlistWebClient.relift — concurrency', () => {
+  // The write throttle serializes requests, but callers invalidate from the
+  // tool layer outside it. Two concurrent attendance writes could both see a
+  // logged-out page and race: the first clears the cookie, the second finds
+  // nothing lifted to clear, concludes no renewal is available, and gives up
+  // while a perfectly good re-lift is in flight.
+  afterEach(() => {
+    vi.resetModules();
+    delete process.env.SETLIST_SESSION_COOKIE;
+  });
+
+  it('shares one in-flight lift between concurrent callers', async () => {
+    let lifts = 0;
+    vi.doMock('../src/fetchproxy-cookie.js', () => ({
+      resolveSessionCookie: async () => {
+        lifts++;
+        return { cookieHeader: `JSESSIONID=v${lifts}` };
+      },
+    }));
+    const { SetlistWebClient } = await import('../src/web-client.js');
+    const c = new SetlistWebClient();
+    // Resolve an initial lifted cookie so there is something to renew.
+    await (c as unknown as { requireCookie(): Promise<string> }).requireCookie();
+    expect(lifts).toBe(1);
+
+    const [a, b] = await Promise.all([c.relift(), c.relift()]);
+    expect(a).toBe(true);
+    expect(b).toBe(true); // neither caller is told "nothing to renew"
+    expect(lifts).toBe(2); // one shared re-lift, not two
+  });
+
+  it('reports false for an env cookie so callers skip a pointless re-read', async () => {
+    process.env.SETLIST_SESSION_COOKIE = 'JSESSIONID=from-env';
+    const { SetlistWebClient } = await import('../src/web-client.js');
+    const c = new SetlistWebClient();
+    expect(await c.relift()).toBe(false);
+  });
+});
