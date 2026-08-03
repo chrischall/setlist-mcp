@@ -21,8 +21,12 @@ interface AttendanceControl {
  * Raised when an authenticated setlist.fm page renders in a logged-out state —
  * the session cookie has expired or been invalidated (commonly mid-batch, after
  * a burst of authenticated writes). Distinct from a generic "control not found"
- * so the caller knows to re-copy SETLIST_SESSION_COOKIE / re-pair the bridge
- * rather than chasing a layout or rate-limit issue.
+ * so the caller knows the session itself is the problem rather than chasing a
+ * layout or rate-limit issue.
+ *
+ * The transport re-lifts a browser session once before this is raised, so
+ * reaching here means the browser is signed out too — or the cookie came from
+ * SETLIST_SESSION_COOKIE, which is static and cannot be renewed.
  */
 export class SessionExpiredError extends Error {
   constructor(message: string) {

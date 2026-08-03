@@ -172,3 +172,30 @@ describe('SetlistWebClient.relift — concurrency', () => {
     expect(await c.relift()).toBe(false);
   });
 });
+
+describe('SetlistWebClient.requireCookie — single-flight', () => {
+  afterEach(() => {
+    vi.resetModules();
+    delete process.env.SETLIST_SESSION_COOKIE;
+  });
+
+  it('resolves one cookie for concurrent first-use callers', async () => {
+    // relift() shares an in-flight RE-lift, but the window it opens (cookie
+    // momentarily null) is exactly when a concurrent request can arrive at
+    // requireCookie() and start a SECOND bridge round-trip for one session.
+    let resolves = 0;
+    vi.doMock('../src/fetchproxy-cookie.js', () => ({
+      resolveSessionCookie: async () => {
+        resolves++;
+        await new Promise((r) => setTimeout(r, 5));
+        return { cookieHeader: 'JSESSIONID=shared' };
+      },
+    }));
+    const { SetlistWebClient } = await import('../src/web-client.js');
+    const c = new SetlistWebClient() as unknown as { requireCookie(): Promise<string> };
+    const [a, b] = await Promise.all([c.requireCookie(), c.requireCookie()]);
+    expect(a).toBe('JSESSIONID=shared');
+    expect(b).toBe('JSESSIONID=shared');
+    expect(resolves).toBe(1);
+  });
+});
