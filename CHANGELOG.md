@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.6](https://github.com/chrischall/setlist-mcp/compare/v0.9.5...v0.9.6) (2026-08-06)
+
+
+### Bug Fixes
+
+* **deps:** move to @fetchproxy/server 2.0.0 for the v3 handshake ([#99](https://github.com/chrischall/setlist-mcp/issues/99)) ([56b029c](https://github.com/chrischall/setlist-mcp/commit/56b029c44aec12d227842aa579d8fc6140629924))
+
 ## [0.9.5](https://github.com/chrischall/setlist-mcp/compare/v0.9.4...v0.9.5) (2026-08-03)
 
 
