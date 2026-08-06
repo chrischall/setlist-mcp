@@ -1,7 +1,7 @@
 {
   "name": "setlist-mcp",
   "displayName": "setlist.fm",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "MCP server for setlist.fm — search concert setlists, artists, venues, and tours via the setlist.fm API",
   "author": {
     "name": "Chris Hall",
