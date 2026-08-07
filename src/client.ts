@@ -13,9 +13,9 @@ import { augmentSetlists } from './augment.js';
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
 // lets .env override a host-provided value.
-// The try/catch guards the Cloudflare Worker runtime, where `import.meta.url`
-// is undefined and `fileURLToPath(undefined)` would throw at module init
-// (Worker startup validation) — there is no filesystem / .env to load there.
+// The try/catch guards a runtime where `import.meta.url` is undefined and
+// `fileURLToPath(undefined)` would throw at module init — a sandboxed one has
+// no filesystem or .env to load anyway.
 try {
   const dir = dirname(fileURLToPath(import.meta.url));
   await loadDotenvSafely({ path: join(dir, '..', '.env'), override: false });
@@ -43,9 +43,9 @@ export class SetlistClient {
    * install-time tools/list smoke test) when SETLIST_API_KEY isn't set yet.
    * Tool calls re-raise the error at request time via {@link requireKey}.
    *
-   * `opts.apiKey` is an optional constructor seam: a hosted, per-user deployment
-   * (e.g. the Cloudflare Worker connector) builds one client per request with
-   * that user's injected key instead of the process-wide env var. Left unset by
+   * `opts.apiKey` is an optional constructor seam: a hosted, per-user
+   * deployment builds one client per request with that user's injected key
+   * instead of the process-wide env var. Left unset by
    * the stdio path, which falls back to `SETLIST_API_KEY` exactly as before —
    * keeping that behaviour byte-for-byte identical.
    */
