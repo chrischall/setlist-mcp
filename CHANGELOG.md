@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.7](https://github.com/chrischall/setlist-mcp/compare/v0.9.6...v0.9.7) (2026-08-09)
+
+
+### Refactor
+
+* **connector:** retire the standalone Cloudflare Worker connector ([#101](https://github.com/chrischall/setlist-mcp/issues/101)) ([7fc2d53](https://github.com/chrischall/setlist-mcp/commit/7fc2d5330f2faf561ee8961dca4577030a661314))
+
 ## [0.9.6](https://github.com/chrischall/setlist-mcp/compare/v0.9.5...v0.9.6) (2026-08-06)
 
 
