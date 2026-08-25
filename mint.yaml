@@ -1,0 +1,43 @@
+version: 1
+name: setlist.fm
+slug: setlist
+summary: >-
+  setlist.fm concert data for Claude — search setlists, artists, venues,
+  tours, and cities via natural language
+#
+# Hosting note (a comment, not user-facing summary text): this is a
+# BROWSER-BRIDGE MCP — it reaches its site through the user's signed-in
+# tab via the fetchproxy bridge. A bridged registration also needs runtime
+# `fly-shared`, `bridge: true` and a `bridgePortEnv`, which are registration
+# fields this manifest has no schema for (set them over the control API).
+# `state.dataDir` below is required for `bridge`.
+env:
+  - name: SETLIST_API_KEY
+    secret: true
+    required: true
+    help: >-
+      Your setlist.fm API key (apply at setlist.fm/settings/api)
+  - name: SETLIST_ACCEPT_LANGUAGE
+    required: false
+    help: >-
+      Optional language for city/country names (en, es, fr, de, pt, tr, it, pl)
+  - name: SETLIST_SESSION_COOKIE
+    secret: true
+    required: false
+    help: >-
+      Optional. Logged-in www.setlist.fm Cookie header — enables the attendance
+      write tools.
+state:
+  dataDir: true
+  reason: >-
+    The fetchproxy identity lives at $HOME/.fetchproxy/identity/<name>.json
+    and the pair code derives from it. Without a persistent $HOME every cold
+    start mints a fresh identity and re-prompts pairing in the browser; the
+    API refuses bridge without it.
+egress:
+  allow:
+    # Only hosts the SERVER process actually fetches. Hosts that appear
+    # solely in a URL this server BUILDS and returns are excluded.
+    - api.setlist.fm
+    - setlist.fm
+    - www.setlist.fm
