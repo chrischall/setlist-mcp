@@ -1,5 +1,5 @@
 ---
-name: setlist-mcp
+name: setlist
 description: Look up concert setlists and live-music history via setlist.fm. Use when the user asks what songs an artist played at a show, their tour setlists, what was performed at a venue or on a date, or wants to find concerts by artist, venue, city, or year. Triggers on phrases like "what did Radiohead play at...", "Phish setlist for...", "shows at Red Rocks", "what songs were played on this tour", or any request about concert setlists, gigs, tours, or live performances. Requires setlist-mcp installed and the setlist server registered (see Setup below).
 ---
 
