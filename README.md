@@ -59,7 +59,7 @@ Use is governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-te
 ```bash
 npm install
 npm run build   # tsc + esbuild bundle → dist/
-npm test        # vitest
+npm test        # tsc typecheck + vitest
 ```
 
 For local runs, put `SETLIST_API_KEY=<key>` in a `.env` file (gitignored) next to the project root.
