@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.8](https://github.com/chrischall/setlist-mcp/compare/v0.9.7...v0.9.8) (2026-08-27)
+
+
+### Documentation
+
+* npm test now typechecks before running vitest ([#119](https://github.com/chrischall/setlist-mcp/issues/119)) ([21aff5e](https://github.com/chrischall/setlist-mcp/commit/21aff5e85598d8a26fe8d363dae81e5097cf4d35))
+* **readme:** npm test now typechecks before running vitest ([#121](https://github.com/chrischall/setlist-mcp/issues/121)) ([4520126](https://github.com/chrischall/setlist-mcp/commit/4520126e1cf8b76e9ba3ced6c315594b151dd8b1))
+* **skill:** declare the name this skill actually publishes under ([#115](https://github.com/chrischall/setlist-mcp/issues/115)) ([140508e](https://github.com/chrischall/setlist-mcp/commit/140508e2b438c489bd101a756a80fe88d02e08c3))
+
 ## [0.9.7](https://github.com/chrischall/setlist-mcp/compare/v0.9.6...v0.9.7) (2026-08-09)
 
 

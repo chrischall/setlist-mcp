@@ -6,12 +6,12 @@
     "url": "https://github.com/chrischall/setlist-mcp",
     "source": "github"
   },
-  "version": "0.9.7",
+  "version": "0.9.8",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "setlist-mcp",
-      "version": "0.9.7",
+      "version": "0.9.8",
       "transport": {
         "type": "stdio"
       },
