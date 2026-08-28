@@ -38,6 +38,13 @@ egress:
   allow:
     # Only hosts the SERVER process actually fetches. Hosts that appear
     # solely in a URL this server BUILDS and returns are excluded.
-    - api.setlist.fm
-    - setlist.fm
-    - www.setlist.fm
+    #
+    # Unlike a pure bridge MCP, this process dials setlist.fm DIRECTLY in
+    # every mode: the bridge is used once, lazily, to lift the www session
+    # cookie out of the signed-in tab (src/fetchproxy-cookie.ts), and is
+    # never on the request path. Matching is exact, so the apex and www are
+    # separate entries and the apex is NOT listed: no base URL names it
+    # (src/client.ts, src/web-client.ts), and its 301 to www is a hop the
+    # process never requests.
+    - api.setlist.fm   # public REST API, x-api-key — every read tool
+    - www.setlist.fm   # attendance tools: server-rendered pages + Wicket AJAX
