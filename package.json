@@ -1,6 +1,6 @@
 {
   "name": "setlist-mcp",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "mcpName": "io.github.chrischall/setlist-mcp",
   "description": "setlist.fm MCP server for Claude — developed and maintained by AI (Claude Code)",
   "author": "Claude Code (AI) <https://www.anthropic.com/claude>",
