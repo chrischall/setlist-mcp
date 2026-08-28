@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.9](https://github.com/chrischall/setlist-mcp/compare/v0.9.8...v0.9.9) (2026-08-28)
+
+
+### Bug Fixes
+
+* **egress:** declare only the hosts the server process dials in mint.yaml ([#123](https://github.com/chrischall/setlist-mcp/issues/123)) ([0dce69a](https://github.com/chrischall/setlist-mcp/commit/0dce69a0849de9dca3a9fb9c16cb42b78edfbf41))
+
 ## [0.9.8](https://github.com/chrischall/setlist-mcp/compare/v0.9.7...v0.9.8) (2026-08-27)
 
 
