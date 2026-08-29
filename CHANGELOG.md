@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/chrischall/setlist-mcp/compare/v0.9.9...v0.10.0) (2026-08-29)
+
+
+### Features
+
+* **deps:** take @fetchproxy/server 2.2.0 so the concentrator can bind its sandbox address ([#125](https://github.com/chrischall/setlist-mcp/issues/125)) ([77880e0](https://github.com/chrischall/setlist-mcp/commit/77880e067757c9bffbda8e5910f849871dd876fd))
+
 ## [0.9.9](https://github.com/chrischall/setlist-mcp/compare/v0.9.8...v0.9.9) (2026-08-28)
 
 
