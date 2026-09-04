@@ -1,5 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult, toolAnnotations, messageOf } from '@chrischall/mcp-utils';
+import { messageOf, minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 
 interface CountriesResponse {
@@ -26,7 +26,7 @@ export function registerUtilityTools(server: McpServer, client: SetlistClient): 
       try {
         const data = await client.request<CountriesResponse>('GET', '/1.0/search/countries');
         const count = data.total ?? data.country?.length ?? 0;
-        return textResult({
+        return minifiedResult({
           ok: true,
           authenticated: true,
           country_count: count,
@@ -36,7 +36,7 @@ export function registerUtilityTools(server: McpServer, client: SetlistClient): 
         const msg = messageOf(e);
         const noKey = /environment variable is required/.test(msg);
         const badKey = /\b(401|403)\b/.test(msg);
-        return textResult({
+        return minifiedResult({
           ok: false,
           authenticated: false,
           error: msg,

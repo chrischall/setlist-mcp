@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult, isoToDmy, createThrottle, ApiError } from '@chrischall/mcp-utils';
+import { ApiError, createThrottle, isoToDmy, minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -346,7 +346,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
         tourFallback,
         request: (m, p, o) => client.request(m, p, o),
       });
-      return textResult(summarizeResults(results));
+      return minifiedResult(summarizeResults(results));
     },
   );
 }

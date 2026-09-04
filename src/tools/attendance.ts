@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult } from '@chrischall/mcp-utils';
+import { minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { webClient } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -173,7 +173,7 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
         confirm: z.boolean().optional().describe('Must be true to actually record attendance; omit for a dry-run preview.'),
       },
     },
-    async ({ setlistId, confirm }) => textResult(await setAttendance(client, setlistId, true, confirm === true)),
+    async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, true, confirm === true)),
   );
 
   server.registerTool(
@@ -188,6 +188,6 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
         confirm: z.boolean().optional().describe('Must be true to actually remove attendance; omit for a dry-run preview.'),
       },
     },
-    async ({ setlistId, confirm }) => textResult(await setAttendance(client, setlistId, false, confirm === true)),
+    async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, false, confirm === true)),
   );
 }
