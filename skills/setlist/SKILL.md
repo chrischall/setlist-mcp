@@ -64,7 +64,9 @@ Optional: set `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`
 
 ## Tools
 
-All tools are read-only and prefixed `setlist_`.
+All tools are prefixed `setlist_`. Everything below is read-only; the two
+attendance tools (`setlist_mark_attended` / `setlist_unmark_attended`) write to
+your setlist.fm account and are confirm-gated.
 
 ### Artists
 - **`setlist_search_artists`** — find artists by `artistName` or `artistMbid`; returns each artist's MusicBrainz ID (`mbid`).
@@ -96,6 +98,51 @@ All tools are read-only and prefixed `setlist_`.
 
 ### Utility
 - **`setlist_healthcheck`** — verify the API key works and the API is reachable.
+
+## Response shape (`view`)
+
+Fifteen tools take `view: "compact" | "full"` — every search and every getter
+above, from `setlist_search_artists` through `setlist_get_user_edited` — and
+**`compact` is the default**. The slim rung arrives without being asked for,
+because an efficiency a caller has to know about and request is one that
+usually is not requested.
+
+**Compact strips image and avatar URLs, and claims no field projection.** These
+tools hand setlist.fm's payload back close to verbatim, and this repo holds no
+captured fixture or documented field list for those endpoints — so nothing here
+can honestly say which of setlist.fm's fields matter and which are noise.
+Stripping media needs no such knowledge and is subtractive, so it cannot lose a
+field nobody knew about; an invented field list would risk returning a record
+with holes in it that still reads like a verified answer. Expect the same
+record minus the picture URLs, not a named field set.
+
+Note what this does **not** touch: a setlist's `url` is not a media URL, and it
+is the link setlist.fm's API terms require you to show — it survives BOTH rungs,
+and `tests/view.test.ts` pins that. Compact is not a reason to drop attribution.
+
+In practice that leaves compact with little to remove: none of the setlist.fm
+payloads captured in this repo carry a media key at all, so today the two rungs
+are usually the same bytes. The rung is there so that a field arriving later
+with a picture in it is stripped by default, rather than after somebody notices.
+
+`view: "full"` returns setlist.fm's payload untouched. There is **no `raw`
+rung**: `full` already IS the untouched payload, so a third value could only
+alias it.
+
+The other five tools take no `view`, each for its own reason:
+
+- **`setlist_resolve_concerts`** already answers in its own shape. It builds
+  the `{matched, stubs, tourReferenced, unmatched, pending}` summary and the
+  per-show rows itself, unconditionally — that projection IS the tool's output,
+  not a slimmed copy of an upstream payload, so there is no fatter version to
+  offer. A `view` here would be a parameter that decides nothing.
+- **`setlist_id_from_url`** parses an id out of a URL string. No network call,
+  no payload, nothing to project.
+- **`setlist_mark_attended` and `setlist_unmark_attended`** are writes. A
+  write's response is a receipt — a status, an id — with nothing to strip and
+  everything to keep.
+- **`setlist_healthcheck`** answers whether the API key works and the API is
+  reachable.
 
 ## Typical flows
 
