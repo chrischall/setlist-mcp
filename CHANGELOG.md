@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/chrischall/setlist-mcp/compare/v0.11.0...v0.11.1) (2026-09-04)
+
+
+### Documentation
+
+* **skill:** document the `view` response-shape parameter ([#145](https://github.com/chrischall/setlist-mcp/issues/145)) ([90c764a](https://github.com/chrischall/setlist-mcp/commit/90c764a84eadde2b482f9a927b7b9ae1868a476d))
+
 ## [0.11.0](https://github.com/chrischall/setlist-mcp/compare/v0.10.0...v0.11.0) (2026-09-04)
 
 
