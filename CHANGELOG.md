@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.0](https://github.com/chrischall/setlist-mcp/compare/v0.10.0...v0.11.0) (2026-09-04)
+
+
+### Features
+
+* **tools:** compact by default — strip media URLs, and minify every response ([#139](https://github.com/chrischall/setlist-mcp/issues/139)) ([faafa3b](https://github.com/chrischall/setlist-mcp/commit/faafa3b15d776bc2faad6ab701380532fa0e98ea))
+
+
+### Bug Fixes
+
+* **deps:** pick up @chrischall/mcp-utils 0.23.2 ([#143](https://github.com/chrischall/setlist-mcp/issues/143)) ([ff4dfd6](https://github.com/chrischall/setlist-mcp/commit/ff4dfd63f9238b5e258d9aa2fc32ebc29cd6daac))
+
+
+### Refactor
+
+* drop the leftover textResult imports and correct the docs that still name it ([#144](https://github.com/chrischall/setlist-mcp/issues/144)) ([a446fa5](https://github.com/chrischall/setlist-mcp/commit/a446fa55fbe1490da2bc75a3bc61e8e3aac1b72f))
+
 ## [0.10.0](https://github.com/chrischall/setlist-mcp/compare/v0.9.9...v0.10.0) (2026-08-29)
 
 
