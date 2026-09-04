@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
+import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -20,12 +21,13 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
       },
     },
-    async ({ userId }) => {
+    async ({ userId, view }) => {
       const data = await client.request('GET', `/1.0/user/${encodeURIComponent(userId)}`);
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -37,17 +39,18 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
         p: page,
       },
     },
-    async ({ userId, p }) => {
+    async ({ userId, p, view }) => {
       const data = await client.request(
         'GET',
         `/1.0/user/${encodeURIComponent(userId)}/attended`,
         { query: { p } },
       );
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -59,17 +62,18 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
         p: page,
       },
     },
-    async ({ userId, p }) => {
+    async ({ userId, p, view }) => {
       const data = await client.request(
         'GET',
         `/1.0/user/${encodeURIComponent(userId)}/edited`,
         { query: { p } },
       );
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 }

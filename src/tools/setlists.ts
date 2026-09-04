@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult, isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
+import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -25,6 +26,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         artistName: z.string().optional().describe('Artist name'),
         artistMbid: z.string().optional().describe("Artist's MusicBrainz ID (mbid)"),
         venueName: z.string().optional().describe('Venue name'),
@@ -52,7 +54,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
       if (args.date) query.date = isoToDmy(args.date);
       if (args.lastUpdated) query.lastUpdated = isoToCompactTimestamp(args.lastUpdated);
       const data = await client.request('GET', '/1.0/search/setlists', { query });
-      return textResult(data);
+      return viewResponse(args.view, data);
     },
   );
 
@@ -65,12 +67,13 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         setlistId: z.string().describe('Setlist ID (e.g. 63de4613)'),
       },
     },
-    async ({ setlistId }) => {
+    async ({ setlistId, view }) => {
       const data = await client.request('GET', `/1.0/setlist/${encodeURIComponent(setlistId)}`);
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -83,15 +86,16 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         versionId: z.string().describe('Setlist version ID'),
       },
     },
-    async ({ versionId }) => {
+    async ({ versionId, view }) => {
       const data = await client.request(
         'GET',
         `/1.0/setlist/version/${encodeURIComponent(versionId)}`,
       );
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 }

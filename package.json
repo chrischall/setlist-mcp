@@ -2,7 +2,7 @@
   "name": "setlist-mcp",
   "version": "0.10.0",
   "mcpName": "io.github.chrischall/setlist-mcp",
-  "description": "setlist.fm MCP server for Claude — developed and maintained by AI (Claude Code)",
+  "description": "setlist.fm MCP server for Claude \u2014 developed and maintained by AI (Claude Code)",
   "author": "Claude Code (AI) <https://www.anthropic.com/claude>",
   "repository": {
     "type": "git",
@@ -44,7 +44,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@chrischall/mcp-utils": "^0.17.1",
+    "@chrischall/mcp-utils": "^0.23.0",
     "@fetchproxy/bootstrap": "^2.2.0",
     "@fetchproxy/server": "^2.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",

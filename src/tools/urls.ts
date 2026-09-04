@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult, toolAnnotations } from '@chrischall/mcp-utils';
+import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 
 /**
  * Extract the setlist ID from a setlist.fm setlist URL. The ID is the trailing
@@ -42,6 +42,6 @@ export function registerUrlTools(server: McpServer): void {
         url: z.string().describe('A setlist.fm setlist URL, e.g. https://www.setlist.fm/setlist/.../...-4ba8a766.html'),
       },
     },
-    async ({ url }) => textResult({ setlistId: extractSetlistId(url) }),
+    async ({ url }) => minifiedResult({ setlistId: extractSetlistId(url) }),
   );
 }

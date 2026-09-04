@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
+import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -20,6 +21,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         name: z.string().optional().describe('Venue name'),
         cityName: z.string().optional().describe('City the venue is in'),
         cityId: z.string().optional().describe("City's geoId"),
@@ -31,7 +33,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
     },
     async (args) => {
       const data = await client.request('GET', '/1.0/search/venues', { query: args });
-      return textResult(data);
+      return viewResponse(args.view, data);
     },
   );
 
@@ -41,12 +43,13 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
       description: "Get a setlist.fm venue by its ID." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         venueId: z.string().describe('Venue ID'),
       },
     },
-    async ({ venueId }) => {
+    async ({ venueId, view }) => {
       const data = await client.request('GET', `/1.0/venue/${encodeURIComponent(venueId)}`);
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -58,17 +61,18 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         venueId: z.string().describe('Venue ID'),
         p: page,
       },
     },
-    async ({ venueId, p }) => {
+    async ({ venueId, p, view }) => {
       const data = await client.request(
         'GET',
         `/1.0/venue/${encodeURIComponent(venueId)}/setlists`,
         { query: { p } },
       );
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 }

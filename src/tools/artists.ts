@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
+import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -20,6 +21,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         artistName: z.string().optional().describe('Artist name to search for'),
         artistMbid: z.string().optional().describe("Artist's MusicBrainz ID (mbid)"),
         sort: z
@@ -29,11 +31,11 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
         p: page,
       },
     },
-    async ({ artistName, artistMbid, sort, p }) => {
+    async ({ artistName, artistMbid, sort, p, view }) => {
       const data = await client.request('GET', '/1.0/search/artists', {
         query: { artistName, artistMbid, sort, p },
       });
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -43,12 +45,13 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
       description: "Get a setlist.fm artist by their MusicBrainz ID (mbid)." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),
       },
     },
-    async ({ mbid }) => {
+    async ({ mbid, view }) => {
       const data = await client.request('GET', `/1.0/artist/${encodeURIComponent(mbid)}`);
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -60,17 +63,18 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),
         p: page,
       },
     },
-    async ({ mbid, p }) => {
+    async ({ mbid, p, view }) => {
       const data = await client.request(
         'GET',
         `/1.0/artist/${encodeURIComponent(mbid)}/setlists`,
         { query: { p } },
       );
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 }

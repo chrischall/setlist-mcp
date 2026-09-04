@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { textResult } from '@chrischall/mcp-utils';
+import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -20,6 +21,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         name: z.string().optional().describe('City name'),
         country: z.string().optional().describe("City's country"),
         state: z.string().optional().describe('State the city lies in'),
@@ -29,7 +31,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
     },
     async (args) => {
       const data = await client.request('GET', '/1.0/search/cities', { query: args });
-      return textResult(data);
+      return viewResponse(args.view, data);
     },
   );
 
@@ -39,12 +41,13 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
       description: "Get a city by its geoId." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: {
+        view: viewArg(),
         geoId: z.string().describe("City's geoId"),
       },
     },
-    async ({ geoId }) => {
+    async ({ geoId, view }) => {
       const data = await client.request('GET', `/1.0/city/${encodeURIComponent(geoId)}`);
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 
@@ -54,11 +57,14 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
       description:
         "List all countries supported by setlist.fm, with their ISO country codes. Use a code as countryCode in setlist_search_setlists." +
         ATTRIBUTION_NOTE,
+      inputSchema: {
+        view: viewArg(),
+      },
       annotations: { readOnlyHint: true },
     },
-    async () => {
+    async ({ view }) => {
       const data = await client.request('GET', '/1.0/search/countries');
-      return textResult(data);
+      return viewResponse(view, data);
     },
   );
 }
