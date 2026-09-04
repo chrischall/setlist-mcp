@@ -101,7 +101,7 @@ your setlist.fm account and are confirm-gated.
 
 ## Response shape (`view`)
 
-Sixteen tools take `view: "compact" | "full"` — every search and every getter
+Fifteen tools take `view: "compact" | "full"` — every search and every getter
 above, from `setlist_search_artists` through `setlist_get_user_edited` — and
 **`compact` is the default**. The slim rung arrives without being asked for,
 because an efficiency a caller has to know about and request is one that
@@ -129,7 +129,7 @@ with a picture in it is stripped by default, rather than after somebody notices.
 rung**: `full` already IS the untouched payload, so a third value could only
 alias it.
 
-The other four tools take no `view`, each for its own reason:
+The other five tools take no `view`, each for its own reason:
 
 - **`setlist_resolve_concerts`** already answers in its own shape. It builds
   the `{matched, stubs, tourReferenced, unmatched, pending}` summary and the
