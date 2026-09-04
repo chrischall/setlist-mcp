@@ -6,10 +6,16 @@ import { minifiedResult, resolveView, stripMediaUrls, viewParam, type View } fro
  *
  * **What compact does here, and what it deliberately does NOT do.**
  *
- * The read tools in this server hand back Setlist.fm's payload close to
- * verbatim, and the repo holds no verified record of what those payloads
- * contain — no captured fixture, no documented field list. So nothing here can
- * honestly say which of Setlist.fm's fields matter and which are noise.
+ * Most read tools here hand back Setlist.fm's payload close to verbatim, and
+ * the repo holds no captured fixture or documented field list for those
+ * endpoints. So nothing here can honestly say which of Setlist.fm's fields
+ * matter and which are noise.
+ *
+ * One exception, and it takes no `view` on purpose: `setlist_resolve_concerts`
+ * builds its own answer through `summarizeResults` (`tools/resolve.ts`). That
+ * is not a rung — it is unconditional, and it IS the tool's output rather than
+ * a slimmed copy of an upstream payload. There is no fatter version of it to
+ * offer, so a `view` there would be a parameter that decides nothing.
  *
  * Compact therefore does the one projection that needs no such knowledge: it
  * strips image and avatar URLs. That is SUBTRACTIVE, so it cannot lose a field
