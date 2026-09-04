@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { textResult, isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
+import { isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
