@@ -40,6 +40,23 @@ describe('what compact does — and what it deliberately does not', () => {
     const d = { link: 'https://www.setlist.fm/setlist/s1.html' };
     expect(parse(viewResponse('compact', d))).toEqual(d);
   });
+
+  it("keeps the attribution `url` — the API terms ride on it, on the DEFAULT rung", () => {
+    // setlist.fm's terms require a followable link wherever their data is
+    // shown, and the only thing carrying it is the `url` on each record.
+    // compact is what a caller gets when they ask for nothing, so a projection
+    // that ate `url` would break attribution exactly where nobody would look.
+    // `stripMediaUrls` removes media-NAMED keys and image-extension URLs;
+    // `url` is neither and a setlist.fm permalink ends in `.html`. Pinned here
+    // so widening the projection has to come past this test.
+    const record = {
+      id: '63de4c8b',
+      url: 'https://www.setlist.fm/setlist/band/2026/hall-63de4c8b.html',
+      artist: { name: 'Band', url: 'https://www.setlist.fm/setlists/band-13d6b6bb.html' },
+      venue: { name: 'Hall', url: 'https://www.setlist.fm/venue/hall-3d6299a.html' },
+    };
+    expect(parse(viewResponse('compact', { setlist: [record] }))).toEqual({ setlist: [record] });
+  });
 });
 
 describe('full', () => {

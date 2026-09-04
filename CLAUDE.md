@@ -41,6 +41,10 @@ src/
                   #   one-shot fetchproxy browser-bridge grab (15s withDeadline)
                   #   → actionable error (lazy; @fetchproxy/bootstrap)
   attribution.ts  # ATTRIBUTION_NOTE appended to data tool descriptions
+  view.ts         # SETLIST_VIEWS / viewArg / viewResponse — the fleet `view`
+                  #   vocabulary. compact = stripMediaUrls only (no field
+                  #   projection; see the docblock), full = untouched. Every
+                  #   read tool answers through viewResponse; writes do not
   tools/
     artists.ts    # setlist_search_artists, setlist_get_artist, setlist_get_artist_setlists
     setlists.ts   # setlist_search_setlists, setlist_get_setlist, setlist_get_setlist_version
@@ -53,7 +57,7 @@ src/
     utilities.ts  # setlist_healthcheck
 ```
 
-Each tool file exports a `register<Domain>Tools(server)` function that calls `server.registerTool(name, { description, annotations, inputSchema }, handler)` (high-level `McpServer` API with zod schemas) and returns results via `textResult(...)`. `index.ts` just wires them all up through `runMcp` from `@chrischall/mcp-utils`.
+Each tool file exports a `register<Domain>Tools(server)` function that calls `server.registerTool(name, { description, annotations, inputSchema }, handler)` (high-level `McpServer` API with zod schemas) and returns results via `viewResponse(view, data)` (`src/view.ts`) on the read tools, or `minifiedResult(...)` on the writes. `index.ts` just wires them all up through `runMcp` from `@chrischall/mcp-utils`.
 
 ## Auth & client
 
@@ -107,7 +111,7 @@ write-verification, transport archetypes, testing traps) live in
 
 Governed by the [setlist.fm API terms](https://www.setlist.fm/help/api-terms). The implementation encodes them:
 
-- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and `textResult` passes the full JSON through, so the link is always in the output. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (the `NO_DATA_TOOLS` set — `setlist_healthcheck` and `setlist_id_from_url` — must NOT carry the note, as they surface no setlist.fm data). If you reword the note, keep the `followable attribution` marker or update the test.
+- **Attribution.** The terms require a *followable* link to setlist.fm wherever the data is shown. Every setlist/artist/venue object includes a `url`, and that `url` survives **both** rungs, so the link is always in the output. On `full` the payload is untouched; on the `compact` default `viewResponse` runs `stripMediaUrls`, which removes only media-NAMED keys (`^…(avatar|picture|photo|thumbnail|image|icon|banner|logo)s?(link|uri|url|src)?$`) and strings that are URLs ending in an image extension — `url` is neither, and a setlist.fm permalink ends in `.html`. Anything added here that could strip it would break attribution on the **default** rung, where nobody would look — so `tests/view.test.ts` pins `url` surviving compact, and widening the projection has to come past that test. `src/attribution.ts` (`ATTRIBUTION_NOTE`) is appended to every data tool's description so the model surfaces that `url`; `tests/tools/attribution.test.ts` asserts coverage (the `NO_DATA_TOOLS` set — `setlist_healthcheck` and `setlist_id_from_url` — must NOT carry the note, as they surface no setlist.fm data). If you reword the note, keep the `followable attribution` marker or update the test.
 - **No persistent caching.** The terms forbid retaining copies beyond short-lived caching and require live retrieval. The client makes a direct API call per request and keeps no store — **do not add a response cache or local datastore.**
 - **Non-commercial only**; the free key doesn't cover commercial use.
 - **Rate limits.** Standard tier ≈ 2 req/sec; a 429 is retried once after 2s (`client.ts`).
