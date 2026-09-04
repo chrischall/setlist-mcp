@@ -57,3 +57,25 @@ describe('whitespace', () => {
     expect(JSON.parse(text).description).toBe(description);
   });
 });
+
+describe('`view` never reaches setlist.fm', () => {
+  /**
+   * The bug this guards. Three search tools built their upstream query by
+   * spreading the whole args object, so adding a `view` parameter to their
+   * schema silently started sending `view=compact` to the live API on every
+   * call. It is our parameter, not setlist.fm's.
+   *
+   * The auto-review caught this and I initially doubted it — the destructuring
+   * tools nearby are clean, and a first scan for the pattern excluded object
+   * spreads. `{ ...args }` and `{ query: args }` are exactly how it got out.
+   */
+  it('is destructured out of the query for every search tool', async () => {
+    const { readFile } = await import('node:fs/promises');
+    for (const f of ['setlists.ts', 'venues.ts', 'geo.ts']) {
+      const src = await readFile(new URL(`../src/tools/${f}`, import.meta.url), 'utf8');
+      // no handler may forward its whole args object once `view` is in scope
+      expect(src).not.toMatch(/async \(args\) => \{[\s\S]*?query: args/);
+      expect(src).not.toMatch(/async \(args\) => \{[\s\S]*?\{ \.\.\.args \}/);
+    }
+  });
+});

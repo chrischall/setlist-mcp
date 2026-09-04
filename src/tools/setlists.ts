@@ -49,12 +49,15 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         p: page,
       },
     },
-    async (args) => {
+    async ({ view, ...args }) => {
+      // `view` is OURS, not setlist.fm's. Destructured out before the rest
+      // becomes the upstream query string — spreading the whole args object
+      // sent `view=compact` to the live API on every call.
       const query = { ...args } as Record<string, string | number | undefined>;
       if (args.date) query.date = isoToDmy(args.date);
       if (args.lastUpdated) query.lastUpdated = isoToCompactTimestamp(args.lastUpdated);
       const data = await client.request('GET', '/1.0/search/setlists', { query });
-      return viewResponse(args.view, data);
+      return viewResponse(view, data);
     },
   );
 

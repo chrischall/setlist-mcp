@@ -29,9 +29,12 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
         p: page,
       },
     },
-    async (args) => {
+    async ({ view, ...args }) => {
+      // `view` is OURS, not setlist.fm's. Destructured out before the rest
+      // becomes the upstream query string — spreading the whole args object
+      // sent `view=compact` to the live API on every call.
       const data = await client.request('GET', '/1.0/search/cities', { query: args });
-      return viewResponse(args.view, data);
+      return viewResponse(view, data);
     },
   );
 
