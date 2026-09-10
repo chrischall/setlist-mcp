@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.2](https://github.com/chrischall/setlist-mcp/compare/v0.11.1...v0.11.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* **deps:** @fetchproxy/server 2.10.0 and @chrischall/mcp-utils 0.26.1 ([#157](https://github.com/chrischall/setlist-mcp/issues/157)) ([765f074](https://github.com/chrischall/setlist-mcp/commit/765f07497df39b070b1afe5d2801c42b565bd5f3))
+* **deps:** Bump hono from 4.13.1 to 4.13.7 ([#155](https://github.com/chrischall/setlist-mcp/issues/155)) ([59fa032](https://github.com/chrischall/setlist-mcp/commit/59fa032c9ebf9ddcc1df3317eed7c342ffdf2287))
+
 ## [0.11.1](https://github.com/chrischall/setlist-mcp/compare/v0.11.0...v0.11.1) (2026-09-04)
 
 
