@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.3](https://github.com/chrischall/setlist-mcp/compare/v0.11.2...v0.11.3) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** @fetchproxy/server 2.11.3, so the hosted extension pin persists ([#160](https://github.com/chrischall/setlist-mcp/issues/160)) ([49908ab](https://github.com/chrischall/setlist-mcp/commit/49908abc4f0672a9448c2f781bb33ebdfa3cca84))
+* **deps:** @fetchproxy/server 3.0.0 — protocol v4 (forward secrecy, AAD over the frame) ([#164](https://github.com/chrischall/setlist-mcp/issues/164)) ([33b9408](https://github.com/chrischall/setlist-mcp/commit/33b94087d283d8ed3569d3eb080124ecac1141fc))
+* **deps:** Bump the production-dependencies group with 2 updates ([#163](https://github.com/chrischall/setlist-mcp/issues/163)) ([716c23f](https://github.com/chrischall/setlist-mcp/commit/716c23fc7ae78bda446434c4c8bc731e77689806))
+
 ## [0.11.2](https://github.com/chrischall/setlist-mcp/compare/v0.11.1...v0.11.2) (2026-09-10)
 
 
