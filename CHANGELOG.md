@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.4](https://github.com/chrischall/setlist-mcp/compare/v0.11.3...v0.11.4) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** @fetchproxy/server 3.0.1 — capped peer frames, logged load drops, atomic identity writes ([#165](https://github.com/chrischall/setlist-mcp/issues/165)) ([e49d64a](https://github.com/chrischall/setlist-mcp/commit/e49d64af180507aa0a98c553cd9cd30e78996f41))
+
 ## [0.11.3](https://github.com/chrischall/setlist-mcp/compare/v0.11.2...v0.11.3) (2026-09-14)
 
 
