@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/chrischall/setlist-mcp/compare/v0.11.4...v1.0.0) (2026-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mcp:** migrate server to SDK v2 ([#168](https://github.com/chrischall/setlist-mcp/issues/168))
+
+### Features
+
+* **mcp:** migrate server to SDK v2 ([#168](https://github.com/chrischall/setlist-mcp/issues/168)) ([e2f6230](https://github.com/chrischall/setlist-mcp/commit/e2f62308ecb0ce50a79241d97df27df4b0467fe4))
+
 ## [0.11.4](https://github.com/chrischall/setlist-mcp/compare/v0.11.3...v0.11.4) (2026-09-15)
 
 
