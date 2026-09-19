@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -19,10 +19,10 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         "Get a setlist.fm user's public profile by their userId (their setlist.fm username)." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
-      },
+      }),
     },
     async ({ userId, view }) => {
       const data = await client.request('GET', `/1.0/user/${encodeURIComponent(userId)}`);
@@ -37,11 +37,11 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         "Get the concerts a setlist.fm user has marked as attended. Paginated via `p`." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
         p: page,
-      },
+      }),
     },
     async ({ userId, p, view }) => {
       const data = await client.request(
@@ -60,11 +60,11 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
         "Get the setlists a setlist.fm user has created or edited. Paginated via `p`." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
         p: page,
-      },
+      }),
     },
     async ({ userId, p, view }) => {
       const data = await client.request(

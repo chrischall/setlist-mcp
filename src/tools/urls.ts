@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 
 /**
@@ -38,9 +38,9 @@ export function registerUrlTools(server: McpServer): void {
         idempotent: true,
         openWorld: false,
       }),
-      inputSchema: {
+      inputSchema: z.object({
         url: z.string().describe('A setlist.fm setlist URL, e.g. https://www.setlist.fm/setlist/.../...-4ba8a766.html'),
-      },
+      }),
     },
     async ({ url }) => minifiedResult({ setlistId: extractSetlistId(url) }),
   );

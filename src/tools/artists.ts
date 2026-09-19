@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -19,7 +19,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
         "Search setlist.fm for artists by name or MusicBrainz ID. Returns matching artists with their MusicBrainz ID (mbid) — use that mbid with setlist_get_artist or setlist_get_artist_setlists." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         artistName: z.string().optional().describe('Artist name to search for'),
         artistMbid: z.string().optional().describe("Artist's MusicBrainz ID (mbid)"),
@@ -28,7 +28,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
           .optional()
           .describe('Sort order (sortName = default, or relevance)'),
         p: page,
-      },
+      }),
     },
     async ({ artistName, artistMbid, sort, p, view }) => {
       const data = await client.request('GET', '/1.0/search/artists', {
@@ -43,10 +43,10 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
     {
       description: "Get a setlist.fm artist by their MusicBrainz ID (mbid)." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),
-      },
+      }),
     },
     async ({ mbid, view }) => {
       const data = await client.request('GET', `/1.0/artist/${encodeURIComponent(mbid)}`);
@@ -61,11 +61,11 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
         "Get an artist's setlists (most recent first) by their MusicBrainz ID (mbid). Paginated via `p`." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         mbid: z.string().describe("Artist's MusicBrainz ID (mbid)"),
         p: page,
-      },
+      }),
     },
     async ({ mbid, p, view }) => {
       const data = await client.request(
