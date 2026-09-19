@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -19,14 +19,14 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
         "Search setlist.fm for cities by name and/or location. Returns cities with their geoId — use it as cityId in setlist_search_setlists / setlist_search_venues, or with setlist_get_city." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         name: z.string().optional().describe('City name'),
         country: z.string().optional().describe("City's country"),
         state: z.string().optional().describe('State the city lies in'),
         stateCode: z.string().optional().describe('State code the city lies in'),
         p: page,
-      },
+      }),
     },
     async ({ view, ...args }) => {
       // `view` is OURS, not setlist.fm's. Destructured out before the rest
@@ -42,10 +42,10 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
     {
       description: "Get a city by its geoId." + ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
         geoId: z.string().describe("City's geoId"),
-      },
+      }),
     },
     async ({ geoId, view }) => {
       const data = await client.request('GET', `/1.0/city/${encodeURIComponent(geoId)}`);
@@ -59,9 +59,9 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
       description:
         "List all countries supported by setlist.fm, with their ISO country codes. Use a code as countryCode in setlist_search_setlists." +
         ATTRIBUTION_NOTE,
-      inputSchema: {
+      inputSchema: z.object({
         view: viewArg(),
-      },
+      }),
       annotations: { readOnlyHint: true },
     },
     async ({ view }) => {

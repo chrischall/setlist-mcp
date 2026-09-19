@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { webClient } from '../web-client.js';
@@ -168,10 +168,10 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
         "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your session (needs SETLIST_SESSION_COOKIE). Idempotent: a no-op if already marked. Without confirm: true it returns a dry-run preview and makes NO change; with confirm: true it toggles attendance and verifies by re-reading your attended list." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID (e.g. from setlist_search_setlists / resolve_concerts)'),
         confirm: z.boolean().optional().describe('Must be true to actually record attendance; omit for a dry-run preview.'),
-      },
+      }),
     },
     async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, true, confirm === true)),
   );
@@ -183,10 +183,10 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
         'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your session. Idempotent: a no-op if not currently attended. Without confirm: true it returns a dry-run preview and makes NO change; with confirm: true it removes the attendance and verifies by re-reading.' +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: false, idempotentHint: true, destructiveHint: true, openWorldHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID to remove from your attended shows'),
         confirm: z.boolean().optional().describe('Must be true to actually remove attendance; omit for a dry-run preview.'),
-      },
+      }),
     },
     async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, false, confirm === true)),
   );

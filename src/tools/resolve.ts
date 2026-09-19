@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ApiError, createThrottle, isoToDmy, minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -322,7 +322,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
         "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. Keep batches ≤24." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
-      inputSchema: {
+      inputSchema: z.object({
         concerts: z
           .array(
             z.object({
@@ -339,7 +339,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
           .boolean()
           .optional()
           .describe('For empty stubs, also fetch a same-tour reference setlist (default true). Set false to skip the extra lookups.'),
-      },
+      }),
     },
     async ({ concerts, tourFallback }) => {
       const results = await resolveConcerts(concerts, {
