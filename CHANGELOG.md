@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/chrischall/setlist-mcp/compare/v1.0.0...v1.1.0) (2026-09-19)
+
+
+### Features
+
+* **deps:** take mcp-utils 1.0.0, so this server boots through serveStdio ([#173](https://github.com/chrischall/setlist-mcp/issues/173)) ([e35548a](https://github.com/chrischall/setlist-mcp/commit/e35548adddf0171e57302e622d7e66cd61d0e853))
+
+
+### Bug Fixes
+
+* **deps:** raise the manifest node floor to match mcp-utils 1.0.0 ([#175](https://github.com/chrischall/setlist-mcp/issues/175)) ([7b5b167](https://github.com/chrischall/setlist-mcp/commit/7b5b167c42aadef1f96cf5da6f521f1800b0372d))
+
 ## [1.0.0](https://github.com/chrischall/setlist-mcp/compare/v0.11.4...v1.0.0) (2026-09-19)
 
 
