@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/chrischall/setlist-mcp/compare/v1.1.0...v1.1.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **deps:** require zod ^4.6.5 to match @chrischall/mcp-utils 2.4.0 ([#180](https://github.com/chrischall/setlist-mcp/issues/180)) ([6380c67](https://github.com/chrischall/setlist-mcp/commit/6380c6768bd0817624530d4bb91642ffb7669d01))
+* **deps:** upgrade @chrischall/mcp-utils to 2.4.0 and @fetchproxy/* to 3.2.0 ([#178](https://github.com/chrischall/setlist-mcp/issues/178)) ([f1ff047](https://github.com/chrischall/setlist-mcp/commit/f1ff047ddcd63c95c920a805599c775b886a44ee))
+
 ## [1.1.0](https://github.com/chrischall/setlist-mcp/compare/v1.0.0...v1.1.0) (2026-09-19)
 
 
