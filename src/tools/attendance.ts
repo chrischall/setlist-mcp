@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
-import { webClient } from '../web-client.js';
+import { webClient, isTransient5xx } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 function decodeEntities(s: string): string {
@@ -75,6 +75,9 @@ export function parseAttendance(html: string): AttendanceControl | null {
   return null;
 }
 
+/** Toggle attempts when the gateway 5xxs and a re-read shows it did not land. */
+const MAX_TOGGLE_ATTEMPTS = 3;
+
 interface SetlistMeta {
   url?: string;
   eventDate?: string;
@@ -82,7 +85,42 @@ interface SetlistMeta {
   venue?: { name?: string; city?: { name?: string } };
 }
 
-async function setAttendance(
+/**
+ * Per-setlist write lock. setAttendance is read → decide → TOGGLE → verify; the
+ * web client's throttle serializes individual requests, not that sequence. Two
+ * concurrent calls for one setlist (parallel tool calls, or a host retrying a
+ * slow call — the tools advertise idempotentHint) would both read "not
+ * attended", both toggle, and cancel out. Holding the lock across the whole
+ * sequence makes the second caller re-read after the first finishes, so it
+ * sees the new state and becomes a no-op. A failed run releases the lock.
+ */
+const attendanceLocks = new Map<string, Promise<void>>();
+
+function withSetlistLock<T>(setlistId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = attendanceLocks.get(setlistId) ?? Promise.resolve();
+  // `prev` is always a settled-never-rejecting tail, so chaining is safe.
+  const run = prev.then(() => fn());
+  const tail = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  attendanceLocks.set(setlistId, tail);
+  void tail.then(() => {
+    if (attendanceLocks.get(setlistId) === tail) attendanceLocks.delete(setlistId);
+  });
+  return run;
+}
+
+function setAttendance(
+  client: SetlistClient,
+  setlistId: string,
+  desired: boolean,
+  confirm: boolean,
+): Promise<Record<string, unknown>> {
+  return withSetlistLock(setlistId, () => setAttendanceUnlocked(client, setlistId, desired, confirm));
+}
+
+async function setAttendanceUnlocked(
   client: SetlistClient,
   setlistId: string,
   desired: boolean,
@@ -147,9 +185,24 @@ async function setAttendance(
   }
 
   // Replay the per-render Wicket toggle, then VERIFY by re-reading (a 200 is not proof).
-  const u = new URL(control.ajaxUrl, meta.url);
-  await webClient.wicketAjaxGet(u.pathname + u.search, path.replace(/^\//, ''));
-  const after = parseAttendance(await webClient.fetchPage(path));
+  // The toggle is not idempotent, so a gateway 5xx is ambiguous — the origin may
+  // have applied it before the gateway gave up. Never replay blindly: re-read,
+  // and only re-toggle (with the freshly rendered control) while the state is
+  // still wrong. Bounded so a persistently failing gateway surfaces as an error.
+  let after: AttendanceControl | null = control;
+  for (let attempt = 1; ; attempt++) {
+    const u = new URL(after.ajaxUrl, meta.url);
+    let toggleErr: unknown;
+    try {
+      await webClient.wicketAjaxGet(u.pathname + u.search, path.replace(/^\//, ''));
+    } catch (err) {
+      if (!isTransient5xx(err)) throw err;
+      toggleErr = err;
+    }
+    after = parseAttendance(await webClient.fetchPage(path));
+    if (toggleErr === undefined || after?.attended === desired) break;
+    if (!after || attempt >= MAX_TOGGLE_ATTEMPTS) throw toggleErr;
+  }
   const verified = after?.attended === desired;
   return {
     ...summary,

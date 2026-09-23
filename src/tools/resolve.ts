@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { ApiError, createThrottle, isoToDmy, minifiedResult } from '@chrischall/mcp-utils';
+import { ApiError, createThrottle, isoToDmy, messageOf, minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
@@ -160,6 +160,8 @@ interface ResolveResult {
   alternatives: number;
   tourReference?: TourReference;
   pending?: boolean;
+  /** Set when this concert's upstream lookup failed (non-404); the rest of the batch still resolves. */
+  error?: string;
 }
 
 // When a show is an empty stub but the act toured a repeating set, find a
@@ -288,7 +290,14 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps): P
       results.push({ input: c, match: null, alternatives: 0, pending: true });
       continue;
     }
-    results.push(await resolveOne(req, c, tourFallback));
+    // Per-concert isolation: one bad lookup (a 500, a timeout, a 429 after its
+    // retry) must not throw away the results — and paced upstream calls —
+    // already spent on the rest of the batch.
+    try {
+      results.push(await resolveOne(req, c, tourFallback));
+    } catch (err) {
+      results.push({ input: c, match: null, alternatives: 0, error: messageOf(err) });
+    }
   }
   return results;
 }
@@ -299,13 +308,15 @@ export function summarizeResults(results: ResolveResult[]): Record<string, unkno
   const matched = results.filter((r) => r.match).length;
   const stubs = results.filter((r) => r.match && !r.match.hasSongs).length;
   const tourReferenced = results.filter((r) => r.tourReference).length;
+  const errored = results.filter((r) => r.error !== undefined).length;
   const summary = {
     total: results.length,
     matched,
     stubs,
     tourReferenced,
-    unmatched: results.length - matched - pending,
+    unmatched: results.length - matched - pending - errored,
     pending,
+    errored,
   };
   const payload: Record<string, unknown> = { results, summary };
   if (pending > 0) {
@@ -319,7 +330,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
     'setlist_resolve_concerts',
     {
       description:
-        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. Keep batches ≤24." +
+        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. A concert whose lookup fails upstream comes back with `match: null` and an `error` message (counted in `errored`) while the rest of the batch still resolves — re-call with just those. Keep batches ≤24." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
@@ -327,7 +338,10 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
           .array(
             z.object({
               artist: z.string().describe('Artist name'),
-              date: z.string().describe('Event date, ISO yyyy-MM-dd (e.g. 2025-08-28)'),
+              date: z
+                .string()
+                .regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be ISO yyyy-MM-dd (e.g. 2025-08-28)')
+                .describe('Event date, ISO yyyy-MM-dd (e.g. 2025-08-28)'),
               city: z.string().optional().describe('City to disambiguate multi-city dates (optional)'),
               venue: z.string().optional().describe('Venue to disambiguate (optional)'),
             }),
