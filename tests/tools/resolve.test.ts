@@ -80,11 +80,36 @@ describe('resolveConcerts (core)', () => {
     expect(r.match).toBeNull();
   });
 
-  it('propagates a non-404 error even when its body mentions 404', async () => {
+  it('reports a non-404 error on that concert (even when its body mentions 404), not as unmatched', async () => {
     const request = vi.fn(() =>
       Promise.reject(new ApiError(500, 'setlist.fm error 500 for GET /1.0/search/setlists: page /404 not cached')),
     );
-    await expect(resolveConcerts([{ artist: 'Nobody', date: '2025-01-01' }], fast(request))).rejects.toThrow(/500/);
+    const [r] = await resolveConcerts([{ artist: 'Nobody', date: '2025-01-01' }], fast(request));
+    expect(r.match).toBeNull();
+    expect(r.error).toMatch(/500/);
+  });
+
+  it('keeps the already-resolved results when one concert fails upstream', async () => {
+    // One bad concert late in a batch used to throw out of the loop and discard
+    // every earlier result (and the paced upstream calls spent on them).
+    const request = vi.fn(async (_m: string, _p: string, o?: { query?: Record<string, unknown> }) => {
+      if (o?.query?.artistName === 'Broken') throw new ApiError(503, 'setlist.fm error 503');
+      return { setlist: [setlist()] };
+    });
+    const results = await resolveConcerts(
+      [
+        { artist: 'Oasis', date: '2025-08-28' },
+        { artist: 'Broken', date: '2025-08-29' },
+        { artist: 'Oasis', date: '2025-08-30' },
+      ],
+      fast(request),
+    );
+    expect(results).toHaveLength(3);
+    expect(results[0].match?.setlistId).toBe('s1');
+    expect(results[1]).toMatchObject({ match: null, alternatives: 0 });
+    expect(results[1].error).toMatch(/503/);
+    expect(results[2].match?.setlistId).toBe('s1');
+    expect(results[0].error).toBeUndefined();
   });
 
   it('offers a same-tour reference for an empty stub, picking the closest populated date', async () => {
@@ -212,8 +237,9 @@ describe('summarizeResults', () => {
       },
       { input: { artist: 'C', date: 'd' }, match: null, alternatives: 0 },
       { input: { artist: 'D', date: 'd' }, match: null, alternatives: 0, pending: true },
+      { input: { artist: 'E', date: 'd' }, match: null, alternatives: 0, error: 'boom' },
     ]);
-    expect(out.summary).toMatchObject({ total: 4, matched: 2, stubs: 1, tourReferenced: 1, unmatched: 1, pending: 1 });
+    expect(out.summary).toMatchObject({ total: 5, matched: 2, stubs: 1, tourReferenced: 1, unmatched: 1, pending: 1, errored: 1 });
     expect(String(out.note)).toMatch(/pending/i);
   });
 
@@ -245,6 +271,14 @@ describe('setlist_resolve_concerts tool', () => {
     }));
     expect(out.results[0].match.setlistId).toBe('s1');
     expect(out.summary).toMatchObject({ total: 1, matched: 1 });
+  });
+
+  it('rejects a malformed (non yyyy-MM-dd) date locally, before any upstream call', async () => {
+    const res = await harness
+      .callTool('setlist_resolve_concerts', { concerts: [{ artist: 'Oasis', date: '28/08/2025' }] })
+      .catch(() => ({ isError: true }) as { isError: boolean });
+    expect(res.isError).toBe(true);
+    expect(mockRequest).not.toHaveBeenCalled();
   });
 
   it('rejects a batch larger than 24', async () => {

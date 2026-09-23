@@ -79,7 +79,7 @@ your setlist.fm account and are confirm-gated.
 - **`setlist_get_setlist_version`** — a specific historical version by `versionId`.
 
 ### Batch
-- **`setlist_resolve_concerts`** — resolve up to **24** `{artist, date, city?, venue?}` to their best-match setlists in one call (with `songCount`/`hasSongs` + a `{matched, stubs, tourReferenced, unmatched, pending}` summary). When a show is an empty stub but the act toured a repeating set, the result also includes a **`tourReference`** — a populated, representative setlist from the *same tour* on a nearby date (with `songs` + its own `url`), clearly labeled as a reference, **not** the exact show (pass `tourFallback: false` to skip). Calls are paced to setlist.fm's rate limit; if a batch can't finish in time the rest come back `pending: true` — re-call with just those. For more than 24 shows, chunk into batches of ≤24.
+- **`setlist_resolve_concerts`** — resolve up to **24** `{artist, date, city?, venue?}` to their best-match setlists in one call (with `songCount`/`hasSongs` + a `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary). When a show is an empty stub but the act toured a repeating set, the result also includes a **`tourReference`** — a populated, representative setlist from the *same tour* on a nearby date (with `songs` + its own `url`), clearly labeled as a reference, **not** the exact show (pass `tourFallback: false` to skip). Calls are paced to setlist.fm's rate limit; if a batch can't finish in time the rest come back `pending: true` — re-call with just those. A concert whose lookup fails upstream comes back with `match: null` and an `error` (counted in `errored`) without sinking the batch. For more than 24 shows, chunk into batches of ≤24.
 
 ### Venues
 - **`setlist_search_venues`** — find venues by `name` and/or location.
@@ -132,7 +132,7 @@ alias it.
 The other five tools take no `view`, each for its own reason:
 
 - **`setlist_resolve_concerts`** already answers in its own shape. It builds
-  the `{matched, stubs, tourReferenced, unmatched, pending}` summary and the
+  the `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary and the
   per-show rows itself, unconditionally — that projection IS the tool's output,
   not a slimmed copy of an upstream payload, so there is no fatter version to
   offer. A `view` here would be a parameter that decides nothing.
