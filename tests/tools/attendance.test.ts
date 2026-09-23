@@ -235,3 +235,60 @@ describe('attendance — 5xx on the toggle', () => {
     expect(mockAjax).toHaveBeenCalledTimes(1);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Concurrent writes to the same setlist
+// ────────────────────────────────────────────────────────────────────────────
+//
+// setAttendance reads the control, decides, then fires a TOGGLE. The web
+// client's throttle serializes individual requests but not that sequence, so
+// two parallel marks both saw "not attended", both toggled, and cancelled out.
+describe('attendance — concurrent writes', () => {
+  const meta = { url: 'https://www.setlist.fm/setlist/a/2025/v-1234.html', artist: { name: 'A' }, eventDate: '2025-01-01', venue: { name: 'V', city: { name: 'C' } } };
+  const mockApi = vi.spyOn(client, 'request').mockResolvedValue(meta as never);
+  const mockPage = vi.spyOn(webClient, 'fetchPage').mockResolvedValue('');
+  const mockAjax = vi.spyOn(webClient, 'wicketAjaxGet').mockResolvedValue('<ajax-response/>');
+  let harness: Awaited<ReturnType<typeof createTestHarness>>;
+  const tick = () => new Promise((r) => setTimeout(r, 2));
+  let attended: boolean;
+
+  beforeEach(() => {
+    attended = false;
+    mockApi.mockClear().mockResolvedValue(meta as never);
+    // A tiny fake server: the page reflects the state, the toggle flips it.
+    mockPage.mockReset().mockImplementation(async () => { await tick(); return attended ? ATTENDED : NOT_ATTENDED; });
+    mockAjax.mockReset().mockImplementation(async () => { await tick(); attended = !attended; return '<ajax-response/>'; });
+  });
+  afterAll(async () => { if (harness) await harness.close(); });
+  const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
+
+  it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
+
+  it('two parallel marks of the same setlist leave it attended (second is a no-op)', async () => {
+    const [a, b] = await Promise.all([
+      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
+      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
+    ]);
+    expect(attended).toBe(true);
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+    expect([parse(a).changed, parse(b).changed].sort()).toEqual([false, true]);
+  });
+
+  it('a mark and an unmark racing apply in order rather than toggling blindly', async () => {
+    const [m, u] = await Promise.all([
+      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
+      harness.callTool('setlist_unmark_attended', { setlistId: '1234', confirm: true }),
+    ]);
+    expect(parse(m)).toMatchObject({ changed: true, verified: true });
+    expect(parse(u)).toMatchObject({ attended: false, changed: true, verified: true });
+    expect(attended).toBe(false);
+  });
+
+  it('a failed write does not wedge later writes to the same setlist', async () => {
+    mockAjax.mockRejectedValueOnce(new Error('boom'));
+    const first = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    expect(first.isError).toBeTruthy();
+    const second = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    expect(second).toMatchObject({ attended: true, changed: true, verified: true });
+  });
+});

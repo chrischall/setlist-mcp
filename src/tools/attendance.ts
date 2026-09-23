@@ -85,7 +85,42 @@ interface SetlistMeta {
   venue?: { name?: string; city?: { name?: string } };
 }
 
-async function setAttendance(
+/**
+ * Per-setlist write lock. setAttendance is read → decide → TOGGLE → verify; the
+ * web client's throttle serializes individual requests, not that sequence. Two
+ * concurrent calls for one setlist (parallel tool calls, or a host retrying a
+ * slow call — the tools advertise idempotentHint) would both read "not
+ * attended", both toggle, and cancel out. Holding the lock across the whole
+ * sequence makes the second caller re-read after the first finishes, so it
+ * sees the new state and becomes a no-op. A failed run releases the lock.
+ */
+const attendanceLocks = new Map<string, Promise<void>>();
+
+function withSetlistLock<T>(setlistId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = attendanceLocks.get(setlistId) ?? Promise.resolve();
+  // `prev` is always a settled-never-rejecting tail, so chaining is safe.
+  const run = prev.then(() => fn());
+  const tail = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  attendanceLocks.set(setlistId, tail);
+  void tail.then(() => {
+    if (attendanceLocks.get(setlistId) === tail) attendanceLocks.delete(setlistId);
+  });
+  return run;
+}
+
+function setAttendance(
+  client: SetlistClient,
+  setlistId: string,
+  desired: boolean,
+  confirm: boolean,
+): Promise<Record<string, unknown>> {
+  return withSetlistLock(setlistId, () => setAttendanceUnlocked(client, setlistId, desired, confirm));
+}
+
+async function setAttendanceUnlocked(
   client: SetlistClient,
   setlistId: string,
   desired: boolean,
