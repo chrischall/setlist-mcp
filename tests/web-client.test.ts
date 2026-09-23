@@ -65,6 +65,18 @@ describe('SetlistWebClient', () => {
     expect(n).toBe(2);
   });
 
+  it('does NOT retry a 5xx on the Wicket toggle — a replay could flip it back', async () => {
+    // The attendance anchor is a TOGGLE. A 502/504 after the origin committed
+    // (timeout-after-commit) followed by a blind retry flips attendance back.
+    // The caller re-reads the page to decide; the transport must not replay.
+    process.env.SETLIST_SESSION_COOKIE = 'c=1';
+    const fn = vi.fn(async () => new Response('gateway', { status: 502, headers: { 'content-type': 'text/html' } }));
+    vi.stubGlobal('fetch', fn);
+    const c = new SetlistWebClient();
+    await expect(c.wicketAjaxGet('/?p:1-link', 'setlist/x.html')).rejects.toMatchObject({ status: 502 });
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('does not retry a 404 whose body merely mentions a 5xx code', async () => {
     process.env.SETLIST_SESSION_COOKIE = 'c=1';
     const fn = vi.fn(async () => {

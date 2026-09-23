@@ -19,9 +19,16 @@ const RETRY_DELAY_MS = 1200;
 const RETRYABLE_5XX = [500, 502, 503, 504];
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-// Retry transient gateway errors (500/502/503/504), detected from ApiError's
-// real `.status` — never from the message, so a 404 page whose body happens to
-// mention "503" doesn't trigger retries. Kept as a local helper (rather than
+/**
+ * Is this a transient gateway error (500/502/503/504)? Detected from
+ * ApiError's real `.status` — never from the message, so a 404 page whose body
+ * happens to mention "503" doesn't count.
+ */
+export function isTransient5xx(err: unknown): err is ApiError {
+  return err instanceof ApiError && RETRYABLE_5XX.includes(err.status);
+}
+
+// Retry transient gateway errors on idempotent reads only (see isTransient5xx). Kept as a local helper (rather than
 // the client-level `retry.statuses` option) because the 5xx policy here
 // (3 retries × 1.2s) intentionally differs from the client's 429 policy
 // (1 retry × 2s), and `RetryPolicy` shares one count/delay across all statuses.
@@ -32,7 +39,7 @@ async function retryOn5xx<T>(fn: () => Promise<T>): Promise<T> {
       return await fn();
     } catch (err) {
       lastErr = err;
-      if (attempt < RETRY_5XX && err instanceof ApiError && RETRYABLE_5XX.includes(err.status)) {
+      if (attempt < RETRY_5XX && isTransient5xx(err)) {
         await sleep(RETRY_DELAY_MS);
         continue;
       }
@@ -186,21 +193,25 @@ export class SetlistWebClient {
    * `ajaxPath` is the per-render URL parsed from a page's `wicketAjaxGet(...)`;
    * `baseUrl` is the rendering page's path (no leading slash) for the
    * `Wicket-Ajax-BaseURL` header. Returns the `<ajax-response>` XML body.
+   *
+   * Deliberately NOT wrapped in {@link retryOn5xx}: the behaviors replayed here
+   * are toggles (the attendance anchor adds OR removes), and a gateway 502/504
+   * can arrive after the origin already applied the change. A blind replay
+   * would flip it back. The caller re-reads the page and decides whether to
+   * re-issue — see setAttendance in tools/attendance.ts.
    */
   async wicketAjaxGet(ajaxPath: string, baseUrl: string): Promise<string> {
     const cookie = await this.requireCookie();
     return this.throttle(() =>
-      retryOn5xx(() =>
-        this.api.fetchHtml('GET', ajaxPath, {
-          headers: {
-            Cookie: cookie,
-            'Wicket-Ajax': 'true',
-            'Wicket-Ajax-BaseURL': baseUrl,
-            'X-Requested-With': 'XMLHttpRequest',
-            Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
-          },
-        }),
-      ),
+      this.api.fetchHtml('GET', ajaxPath, {
+        headers: {
+          Cookie: cookie,
+          'Wicket-Ajax': 'true',
+          'Wicket-Ajax-BaseURL': baseUrl,
+          'X-Requested-With': 'XMLHttpRequest',
+          Accept: 'text/xml, text/javascript, application/xml, text/html, */*',
+        },
+      }),
     );
   }
 }

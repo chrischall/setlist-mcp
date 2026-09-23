@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { ApiError } from '@chrischall/mcp-utils';
 import { client } from '../../src/client.js';
 import { webClient } from '../../src/web-client.js';
 import { registerAttendanceTools, parseAttendance, looksLoggedOut } from '../../src/tools/attendance.js';
@@ -174,5 +175,63 @@ describe('attendance — expired browser session', () => {
     expect((res.content[0] as { text: string }).text).toMatch(/Could not find the attendance control/i);
     expect(mockRelift).not.toHaveBeenCalled();
     expect(mockPage).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// A 5xx on the toggle is ambiguous — it may have been applied
+// ────────────────────────────────────────────────────────────────────────────
+//
+// The attendance anchor is a toggle. A gateway 502/504 can arrive AFTER the
+// origin committed the change, so a blind replay flips attendance back. The
+// tool must re-read the page and only re-toggle when the state is still wrong.
+describe('attendance — 5xx on the toggle', () => {
+  const meta = { url: 'https://www.setlist.fm/setlist/a/2025/v-1234.html', artist: { name: 'A' }, eventDate: '2025-01-01', venue: { name: 'V', city: { name: 'C' } } };
+  const mockApi = vi.spyOn(client, 'request').mockResolvedValue(meta as never);
+  const mockPage = vi.spyOn(webClient, 'fetchPage').mockResolvedValue('');
+  const mockAjax = vi.spyOn(webClient, 'wicketAjaxGet').mockResolvedValue('<ajax-response/>');
+  let harness: Awaited<ReturnType<typeof createTestHarness>>;
+
+  beforeEach(() => { mockApi.mockClear().mockResolvedValue(meta as never); mockPage.mockReset(); mockAjax.mockReset().mockResolvedValue('<ajax-response/>'); });
+  afterAll(async () => { if (harness) await harness.close(); });
+  const parse = (r: { content: { text: string }[] }) => JSON.parse(r.content[0].text);
+  const gateway = () => new ApiError(504, 'setlist.fm (web) error 504');
+
+  it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
+
+  it('does not re-toggle when the 5xx toggle was in fact applied', async () => {
+    mockAjax.mockRejectedValueOnce(gateway());
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    expect(out).toMatchObject({ attended: true, changed: true, verified: true });
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-toggles with the freshly rendered control when the 5xx toggle was not applied', async () => {
+    const FRESH = NOT_ATTENDED.replace('/?5:attend-link', '/?6:attend-link');
+    mockAjax.mockRejectedValueOnce(gateway());
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(FRESH).mockResolvedValueOnce(ATTENDED);
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    expect(out).toMatchObject({ attended: true, changed: true, verified: true });
+    expect(mockAjax).toHaveBeenCalledTimes(2);
+    expect(mockAjax.mock.calls[1][0]).toBe('/?6:attend-link');
+  });
+
+  it('errors (never claims success) when every toggle attempt 5xxs and the state never changes', async () => {
+    mockAjax.mockRejectedValue(gateway());
+    mockPage.mockResolvedValue(NOT_ATTENDED);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    expect(res.isError).toBeTruthy();
+    expect((res.content[0] as { text: string }).text).toMatch(/504/);
+    expect(mockAjax.mock.calls.length).toBeGreaterThan(1);
+    expect(mockAjax.mock.calls.length).toBeLessThanOrEqual(3);
+  });
+
+  it('does not swallow a non-5xx toggle failure', async () => {
+    mockAjax.mockRejectedValueOnce(new ApiError(403, 'setlist.fm (web) error 403'));
+    mockPage.mockResolvedValue(NOT_ATTENDED);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    expect(res.isError).toBeTruthy();
+    expect(mockAjax).toHaveBeenCalledTimes(1);
   });
 });

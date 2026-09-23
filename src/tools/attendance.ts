@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { minifiedResult } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
-import { webClient } from '../web-client.js';
+import { webClient, isTransient5xx } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 function decodeEntities(s: string): string {
@@ -74,6 +74,9 @@ export function parseAttendance(html: string): AttendanceControl | null {
   }
   return null;
 }
+
+/** Toggle attempts when the gateway 5xxs and a re-read shows it did not land. */
+const MAX_TOGGLE_ATTEMPTS = 3;
 
 interface SetlistMeta {
   url?: string;
@@ -147,9 +150,24 @@ async function setAttendance(
   }
 
   // Replay the per-render Wicket toggle, then VERIFY by re-reading (a 200 is not proof).
-  const u = new URL(control.ajaxUrl, meta.url);
-  await webClient.wicketAjaxGet(u.pathname + u.search, path.replace(/^\//, ''));
-  const after = parseAttendance(await webClient.fetchPage(path));
+  // The toggle is not idempotent, so a gateway 5xx is ambiguous — the origin may
+  // have applied it before the gateway gave up. Never replay blindly: re-read,
+  // and only re-toggle (with the freshly rendered control) while the state is
+  // still wrong. Bounded so a persistently failing gateway surfaces as an error.
+  let after: AttendanceControl | null = control;
+  for (let attempt = 1; ; attempt++) {
+    const u = new URL(after.ajaxUrl, meta.url);
+    let toggleErr: unknown;
+    try {
+      await webClient.wicketAjaxGet(u.pathname + u.search, path.replace(/^\//, ''));
+    } catch (err) {
+      if (!isTransient5xx(err)) throw err;
+      toggleErr = err;
+    }
+    after = parseAttendance(await webClient.fetchPage(path));
+    if (toggleErr === undefined || after?.attended === desired) break;
+    if (!after || attempt >= MAX_TOGGLE_ATTEMPTS) throw toggleErr;
+  }
   const verified = after?.attended === desired;
   return {
     ...summary,
