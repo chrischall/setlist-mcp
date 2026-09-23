@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/chrischall/setlist-mcp/compare/v1.1.1...v1.1.2) (2026-09-23)
+
+
+### Bug Fixes
+
+* make attendance writes safe under 5xx and concurrency; keep partial resolve_concerts results ([#181](https://github.com/chrischall/setlist-mcp/issues/181)) ([628d37c](https://github.com/chrischall/setlist-mcp/commit/628d37cc694cc8a59d4b78bc4de57af55f4b52b7))
+
 ## [1.1.1](https://github.com/chrischall/setlist-mcp/compare/v1.1.0...v1.1.1) (2026-09-23)
 
 
