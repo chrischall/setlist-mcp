@@ -55,9 +55,9 @@ describe('attendance tools', () => {
 
   it('setup', async () => { harness = await createTestHarness((s) => registerAttendanceTools(s, client)); });
 
-  it('mark (confirm) toggles when not attended and verifies via re-read', async () => {
+  it('mark toggles when not attended and verifies via re-read', async () => {
     mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
     expect(out).toMatchObject({ setlistId: '1234', attended: true, changed: true, verified: true });
     expect(mockAjax).toHaveBeenCalledTimes(1);
     const [ajaxPath, baseUrl] = mockAjax.mock.calls[0];
@@ -67,28 +67,42 @@ describe('attendance tools', () => {
 
   it('mark is a no-op when already attended (no write)', async () => {
     mockPage.mockResolvedValue(ATTENDED);
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
     expect(out).toMatchObject({ attended: true, changed: false });
     expect(mockAjax).not.toHaveBeenCalled();
   });
 
-  it('mark without confirm is a dry run (no write)', async () => {
-    mockPage.mockResolvedValue(NOT_ATTENDED);
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
-    expect(out).toMatchObject({ dryRun: true, wouldSetAttendedTo: true, currentlyAttended: false });
-    expect(mockAjax).not.toHaveBeenCalled();
+  // A reversible toggle on your own account: no `confirm` gate (the
+  // confirmation-gate audit, 2026-09-24). A boolean `confirm` is the
+  // deprecated, model-satisfiable gate the fleet CI lint now rejects.
+  it('neither tool takes a confirm input', async () => {
+    const { tools } = await harness.client.listTools();
+    for (const name of ['setlist_mark_attended', 'setlist_unmark_attended']) {
+      const tool = tools.find((t) => t.name === name);
+      expect(tool, name).toBeDefined();
+      expect(Object.keys(tool!.inputSchema.properties ?? {}), name).toEqual(['setlistId']);
+      expect(tool!.description, name).not.toMatch(/confirm|dry.?run/i);
+    }
   });
 
-  it('unmark (confirm) toggles when attended', async () => {
+  it('mark writes on the first call — there is no dry-run step', async () => {
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
+    expect(out).toMatchObject({ attended: true, changed: true, verified: true });
+    expect(out).not.toHaveProperty('dryRun');
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+  });
+
+  it('unmark toggles when attended', async () => {
     mockPage.mockResolvedValueOnce(ATTENDED).mockResolvedValueOnce(NOT_ATTENDED);
-    const out = parse(await harness.callTool('setlist_unmark_attended', { setlistId: '1234', confirm: true }));
+    const out = parse(await harness.callTool('setlist_unmark_attended', { setlistId: '1234' }));
     expect(out).toMatchObject({ attended: false, changed: true, verified: true });
     expect(mockAjax).toHaveBeenCalledTimes(1);
   });
 
   it('raises a distinct session-expired error when the page renders logged-out', async () => {
     mockPage.mockResolvedValue(LOGGED_OUT);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     const text = (res.content[0] as { text: string }).text;
     expect(text).toMatch(/signed out|logged-out/i);
@@ -99,7 +113,7 @@ describe('attendance tools', () => {
 
   it('keeps the generic message when the control is missing for an ambiguous reason', async () => {
     mockPage.mockResolvedValue(UNEXPECTED);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     const text = (res.content[0] as { text: string }).text;
     expect(text).toMatch(/rate-limited|layout/i);
@@ -138,18 +152,19 @@ describe('attendance — expired browser session', () => {
 
   it('re-lifts and re-reads once when the page renders logged-out', async () => {
     mockRelift.mockResolvedValue(true); // a browser-lifted cookie: renewable
-    mockPage.mockResolvedValueOnce(LOGGED_OUT).mockResolvedValueOnce(NOT_ATTENDED);
+    mockPage.mockResolvedValueOnce(LOGGED_OUT).mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);
 
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false }));
-    expect(out).toMatchObject({ currentlyAttended: false, dryRun: true });
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
+    expect(out).toMatchObject({ attended: true, changed: true, verified: true });
     expect(mockRelift).toHaveBeenCalledTimes(1);
-    expect(mockPage).toHaveBeenCalledTimes(2);
+    // logged-out read, re-read after the re-lift, verification re-read
+    expect(mockPage).toHaveBeenCalledTimes(3);
   });
 
   it('still fails when the session is genuinely dead after the re-lift', async () => {
     mockRelift.mockResolvedValue(true);
     mockPage.mockResolvedValue(LOGGED_OUT);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     expect((res.content[0] as { text: string }).text).toMatch(/signed out|logged-out/i);
     // Exactly one retry — no loop.
@@ -159,7 +174,7 @@ describe('attendance — expired browser session', () => {
   it('does NOT retry an env-supplied cookie — it is static', async () => {
     mockRelift.mockResolvedValue(false); // nothing renewable to drop
     mockPage.mockResolvedValue(LOGGED_OUT);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     expect((res.content[0] as { text: string }).text).toMatch(/signed out|logged-out/i);
     expect(mockPage).toHaveBeenCalledTimes(1);
@@ -170,7 +185,7 @@ describe('attendance — expired browser session', () => {
     // expiry. Burning a bridge round-trip on it would be wrong.
     mockRelift.mockResolvedValue(true);
     mockPage.mockResolvedValue(UNEXPECTED);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: false });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     expect((res.content[0] as { text: string }).text).toMatch(/Could not find the attendance control/i);
     expect(mockRelift).not.toHaveBeenCalled();
@@ -202,7 +217,7 @@ describe('attendance — 5xx on the toggle', () => {
   it('does not re-toggle when the 5xx toggle was in fact applied', async () => {
     mockAjax.mockRejectedValueOnce(gateway());
     mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(ATTENDED);
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
     expect(out).toMatchObject({ attended: true, changed: true, verified: true });
     expect(mockAjax).toHaveBeenCalledTimes(1);
   });
@@ -211,7 +226,7 @@ describe('attendance — 5xx on the toggle', () => {
     const FRESH = NOT_ATTENDED.replace('/?5:attend-link', '/?6:attend-link');
     mockAjax.mockRejectedValueOnce(gateway());
     mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(FRESH).mockResolvedValueOnce(ATTENDED);
-    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
     expect(out).toMatchObject({ attended: true, changed: true, verified: true });
     expect(mockAjax).toHaveBeenCalledTimes(2);
     expect(mockAjax.mock.calls[1][0]).toBe('/?6:attend-link');
@@ -220,7 +235,7 @@ describe('attendance — 5xx on the toggle', () => {
   it('errors (never claims success) when every toggle attempt 5xxs and the state never changes', async () => {
     mockAjax.mockRejectedValue(gateway());
     mockPage.mockResolvedValue(NOT_ATTENDED);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     expect((res.content[0] as { text: string }).text).toMatch(/504/);
     expect(mockAjax.mock.calls.length).toBeGreaterThan(1);
@@ -230,7 +245,7 @@ describe('attendance — 5xx on the toggle', () => {
   it('does not swallow a non-5xx toggle failure', async () => {
     mockAjax.mockRejectedValueOnce(new ApiError(403, 'setlist.fm (web) error 403'));
     mockPage.mockResolvedValue(NOT_ATTENDED);
-    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(res.isError).toBeTruthy();
     expect(mockAjax).toHaveBeenCalledTimes(1);
   });
@@ -266,8 +281,8 @@ describe('attendance — concurrent writes', () => {
 
   it('two parallel marks of the same setlist leave it attended (second is a no-op)', async () => {
     const [a, b] = await Promise.all([
-      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
-      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
+      harness.callTool('setlist_mark_attended', { setlistId: '1234' }),
+      harness.callTool('setlist_mark_attended', { setlistId: '1234' }),
     ]);
     expect(attended).toBe(true);
     expect(mockAjax).toHaveBeenCalledTimes(1);
@@ -276,8 +291,8 @@ describe('attendance — concurrent writes', () => {
 
   it('a mark and an unmark racing apply in order rather than toggling blindly', async () => {
     const [m, u] = await Promise.all([
-      harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }),
-      harness.callTool('setlist_unmark_attended', { setlistId: '1234', confirm: true }),
+      harness.callTool('setlist_mark_attended', { setlistId: '1234' }),
+      harness.callTool('setlist_unmark_attended', { setlistId: '1234' }),
     ]);
     expect(parse(m)).toMatchObject({ changed: true, verified: true });
     expect(parse(u)).toMatchObject({ attended: false, changed: true, verified: true });
@@ -286,9 +301,9 @@ describe('attendance — concurrent writes', () => {
 
   it('a failed write does not wedge later writes to the same setlist', async () => {
     mockAjax.mockRejectedValueOnce(new Error('boom'));
-    const first = await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true });
+    const first = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
     expect(first.isError).toBeTruthy();
-    const second = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234', confirm: true }));
+    const second = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
     expect(second).toMatchObject({ attended: true, changed: true, verified: true });
   });
 });

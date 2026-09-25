@@ -89,7 +89,8 @@ fi
 echo "would toggle attended: $CURRENTLY_ATTENDED -> $DESIRED (dry run — confirm before sending)"
 ```
 
-Treat this like the MCP's `confirm` gate: don't send the toggle in step 4
+The control is a toggle, so sending it from the wrong state does the
+opposite of what you meant. Don't send the toggle in step 4
 until you've deliberately decided to (a script arg, an explicit prompt —
 whatever fits your use). Never toggle blind.
 

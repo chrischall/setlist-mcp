@@ -115,16 +115,14 @@ function setAttendance(
   client: SetlistClient,
   setlistId: string,
   desired: boolean,
-  confirm: boolean,
 ): Promise<Record<string, unknown>> {
-  return withSetlistLock(setlistId, () => setAttendanceUnlocked(client, setlistId, desired, confirm));
+  return withSetlistLock(setlistId, () => setAttendanceUnlocked(client, setlistId, desired));
 }
 
 async function setAttendanceUnlocked(
   client: SetlistClient,
   setlistId: string,
   desired: boolean,
-  confirm: boolean,
 ): Promise<Record<string, unknown>> {
   // Resolve the canonical setlist page URL via the public API.
   const meta = await client.request<SetlistMeta>('GET', `/1.0/setlist/${encodeURIComponent(setlistId)}`);
@@ -174,16 +172,6 @@ async function setAttendanceUnlocked(
     };
   }
 
-  if (!confirm) {
-    return {
-      ...summary,
-      currentlyAttended: control.attended,
-      wouldSetAttendedTo: desired,
-      dryRun: true,
-      note: `Dry run — re-run with confirm: true to ${desired ? 'record' : 'remove'} this attendance.`,
-    };
-  }
-
   // Replay the per-render Wicket toggle, then VERIFY by re-reading (a 200 is not proof).
   // The toggle is not idempotent, so a gateway 5xx is ambiguous — the origin may
   // have applied it before the gateway gave up. Never replay blindly: re-read,
@@ -218,29 +206,27 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     'setlist_mark_attended',
     {
       description:
-        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your session (needs SETLIST_SESSION_COOKIE). Idempotent: a no-op if already marked. Without confirm: true it returns a dry-run preview and makes NO change; with confirm: true it toggles attendance and verifies by re-reading your attended list." +
+        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your session (needs SETLIST_SESSION_COOKIE). Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading your attended list." +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID (e.g. from setlist_search_setlists / resolve_concerts)'),
-        confirm: z.boolean().optional().describe('Must be true to actually record attendance; omit for a dry-run preview.'),
       }),
     },
-    async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, true, confirm === true)),
+    async ({ setlistId }) => minifiedResult(await setAttendance(client, setlistId, true)),
   );
 
   server.registerTool(
     'setlist_unmark_attended',
     {
       description:
-        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your session. Idempotent: a no-op if not currently attended. Without confirm: true it returns a dry-run preview and makes NO change; with confirm: true it removes the attendance and verifies by re-reading.' +
+        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your session. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading.' +
         ATTRIBUTION_NOTE,
       annotations: { readOnlyHint: false, idempotentHint: true, destructiveHint: true, openWorldHint: true },
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID to remove from your attended shows'),
-        confirm: z.boolean().optional().describe('Must be true to actually remove attendance; omit for a dry-run preview.'),
       }),
     },
-    async ({ setlistId, confirm }) => minifiedResult(await setAttendance(client, setlistId, false, confirm === true)),
+    async ({ setlistId }) => minifiedResult(await setAttendance(client, setlistId, false)),
   );
 }
