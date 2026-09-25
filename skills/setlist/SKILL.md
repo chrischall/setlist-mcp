@@ -66,7 +66,8 @@ Optional: set `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`
 
 All tools are prefixed `setlist_`. Everything below is read-only; the two
 attendance tools (`setlist_mark_attended` / `setlist_unmark_attended`) write to
-your setlist.fm account and are confirm-gated.
+your setlist.fm account. Each undoes the other, so neither asks for a
+confirmation step.
 
 ### Artists
 - **`setlist_search_artists`** — find artists by `artistName` or `artistMbid`; returns each artist's MusicBrainz ID (`mbid`).

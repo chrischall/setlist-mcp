@@ -129,11 +129,11 @@
     },
     {
       "name": "setlist_mark_attended",
-      "description": "Record on your account that you attended a show (needs SETLIST_SESSION_COOKIE; confirm-gated)"
+      "description": "Record on your account that you attended a show (needs SETLIST_SESSION_COOKIE; undo with setlist_unmark_attended)"
     },
     {
       "name": "setlist_unmark_attended",
-      "description": "Remove a show from your attended list (needs SETLIST_SESSION_COOKIE; confirm-gated)"
+      "description": "Remove a show from your attended list (needs SETLIST_SESSION_COOKIE; undo with setlist_mark_attended)"
     },
     {
       "name": "setlist_healthcheck",
