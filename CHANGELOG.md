@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/chrischall/setlist-mcp/compare/v1.1.2...v1.1.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* **attendance:** drop the confirm flag from mark/unmark attended ([#187](https://github.com/chrischall/setlist-mcp/issues/187)) ([efc3d2b](https://github.com/chrischall/setlist-mcp/commit/efc3d2beacc789f9298ee5043320358e3aacb7b8))
+* **deps:** Bump dotenv in the production-majors group ([#185](https://github.com/chrischall/setlist-mcp/issues/185)) ([3c324a3](https://github.com/chrischall/setlist-mcp/commit/3c324a39c462d4532b05c477732cacbbba0299da))
+
 ## [1.1.2](https://github.com/chrischall/setlist-mcp/compare/v1.1.1...v1.1.2) (2026-09-23)
 
 
