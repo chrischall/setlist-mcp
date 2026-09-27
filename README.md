@@ -43,7 +43,9 @@ Get a free API key (non-commercial use) at [setlist.fm/settings/api](https://www
 
 Optional: `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`) localizes city/country names.
 
-The attendance tools (`setlist_mark_attended` / `setlist_unmark_attended`) need your logged-in www.setlist.fm session. Either set `SETLIST_SESSION_COOKIE` to the `Cookie` header of a logged-in request, or install [ContextMint Bridge](https://github.com/nullnet-app/contextmint-bridge/releases) (Chrome: load the chrome zip unpacked; Safari: ships inside the ContextMint app) and stay signed in to www.setlist.fm — the server lifts the session cookie from your browser on first use. Set `SETLIST_DISABLE_FETCHPROXY=1` to turn the browser fallback off.
+The attendance tools (`setlist_mark_attended` / `setlist_unmark_attended`) need your logged-in www.setlist.fm session. Either set `SETLIST_SESSION_COOKIE` to the `Cookie` header of a logged-in request, or install [ContextMint Bridge](https://github.com/nullnet-app/contextmint-bridge/releases) (Chrome: load the chrome zip unpacked; Safari isn't available yet — it will ship inside the ContextMint app, which has no public download — so use Chrome for now) and stay signed in to www.setlist.fm — the server lifts the session cookie from your browser on first use. Set `SETLIST_DISABLE_FETCHPROXY=1` to turn the browser fallback off.
+
+ContextMint Bridge is the fetchproxy browser extension under its new name, from the same maintainer — fetchproxy's own README (https://github.com/chrischall/fetchproxy#extension) points to it. Its source is public at https://github.com/nullnet-app/contextmint-bridge: build it yourself, or check a release zip against the `.sha256` file published beside it (`shasum -a 256 -c contextmint-bridge-chrome-<version>.zip.sha256`).
 
 See [skills/setlist/SKILL.md](skills/setlist/SKILL.md) for from-source setup, the full tool reference, and example flows.
 

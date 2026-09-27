@@ -88,9 +88,10 @@ fpx profile add setlist --domain setlist.fm          # apex scope
 fpx pair -p setlist                                  # prints a pair code → approve in ContextMint Bridge
 ```
 
-Requirements: **ContextMint Bridge** installed ([releases](https://github.com/nullnet-app/contextmint-bridge/releases) — Chrome: load the chrome zip unpacked; Safari: ships inside the ContextMint app), an open, **signed-in**
+Requirements: **ContextMint Bridge** installed ([releases](https://github.com/nullnet-app/contextmint-bridge/releases) — Chrome: load the chrome zip unpacked; Safari isn't available yet, so use Chrome for now), an open, **signed-in**
 `www.setlist.fm` tab, and Chrome **Site access** allowing `setlist.fm`.
 Pairing persists after the first approval.
+ContextMint Bridge is the renamed fetchproxy extension (same maintainer; [fetchproxy README](https://github.com/chrischall/fetchproxy#extension)); source at https://github.com/nullnet-app/contextmint-bridge — build it, or verify a release zip with `shasum -a 256 -c contextmint-bridge-chrome-<version>.zip.sha256`.
 
 ### Capture the session cookie (once per shell session)
 
