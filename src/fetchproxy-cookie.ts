@@ -10,7 +10,7 @@
 //   2. fetchproxy fallback — unless SETLIST_DISABLE_FETCHPROXY is truthy
 //      ('1'/'true'/'yes'/'on' via parseBoolEnv inside the resolver), lift the
 //      logged-in setlist.fm session cookies out of the signed-in browser tab
-//      (via the Transporter extension) and assemble a `Cookie` header —
+//      (via ContextMint Bridge) and assemble a `Cookie` header —
 //      fetchproxy is NOT in the hot path afterward.
 //   3. Error — nothing configured: an actionable message naming
 //      SETLIST_SESSION_COOKIE and the browser sign-in fallback.
@@ -46,7 +46,7 @@ const bootstrapWithDeadline: BootstrapFn = async (opts) => {
   const outcome = await withDeadline((bootstrap as unknown as BootstrapFn)(opts), BOOTSTRAP_TIMEOUT_MS);
   if (outcome.timedOut) {
     throw new Error(
-      'fetchproxy: timed out waiting for the browser bridge. Is the Transporter extension running and signed into setlist.fm in that browser?',
+      'fetchproxy: timed out waiting for the browser bridge. Is ContextMint Bridge installed and running, and are you signed into setlist.fm in that browser?',
     );
   }
   return outcome.value;

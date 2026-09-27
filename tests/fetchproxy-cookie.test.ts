@@ -65,4 +65,15 @@ describe('resolveSessionCookie', () => {
     await vi.advanceTimersByTimeAsync(15_000);
     await assertion;
   });
+
+  it('names ContextMint Bridge (not the retired Transporter extension) in the bridge timeout', async () => {
+    bootstrap.mockReset();
+    vi.useFakeTimers();
+    bootstrap.mockImplementation(() => new Promise(() => {})); // wedged bridge
+    const p = resolveSessionCookie();
+    const assertion = expect(p).rejects.toThrow(/ContextMint Bridge/);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await assertion;
+    await expect(p).rejects.not.toThrow(/Transporter/);
+  });
 });
