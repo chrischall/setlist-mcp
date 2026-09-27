@@ -85,10 +85,10 @@ control, so you need your own `www.setlist.fm` session cookie.
 ```sh
 npm install -g @fetchproxy/cli                      # provides `fpx`
 fpx profile add setlist --domain setlist.fm          # apex scope
-fpx pair -p setlist                                  # prints a pair code → approve in Transporter
+fpx pair -p setlist                                  # prints a pair code → approve in ContextMint Bridge
 ```
 
-Requirements: the **Transporter** extension installed, an open, **signed-in**
+Requirements: **ContextMint Bridge** installed ([releases](https://github.com/nullnet-app/contextmint-bridge/releases) — Chrome: load the chrome zip unpacked; Safari: ships inside the ContextMint app), an open, **signed-in**
 `www.setlist.fm` tab, and Chrome **Site access** allowing `setlist.fm`.
 Pairing persists after the first approval.
 
@@ -137,7 +137,7 @@ page afterward and re-check the control's state.
   out of the loop.
 - **Session expired mid-session**: a page fetched with your cookie renders
   **logged out** (a `href="/signin"` or `/login` link instead of the
-  attendance control) — re-run the cookie capture (re-approve in Transporter
+  attendance control) — re-run the cookie capture (re-approve in ContextMint Bridge
   if needed) and retry.
 
 ## Notes

@@ -43,6 +43,8 @@ Get a free API key (non-commercial use) at [setlist.fm/settings/api](https://www
 
 Optional: `SETLIST_ACCEPT_LANGUAGE` (one of `en, es, fr, de, pt, tr, it, pl`) localizes city/country names.
 
+The attendance tools (`setlist_mark_attended` / `setlist_unmark_attended`) need your logged-in www.setlist.fm session. Either set `SETLIST_SESSION_COOKIE` to the `Cookie` header of a logged-in request, or install [ContextMint Bridge](https://github.com/nullnet-app/contextmint-bridge/releases) (Chrome: load the chrome zip unpacked; Safari: ships inside the ContextMint app) and stay signed in to www.setlist.fm — the server lifts the session cookie from your browser on first use. Set `SETLIST_DISABLE_FETCHPROXY=1` to turn the browser fallback off.
+
 See [skills/setlist/SKILL.md](skills/setlist/SKILL.md) for from-source setup, the full tool reference, and example flows.
 
 ## Attribution & terms
