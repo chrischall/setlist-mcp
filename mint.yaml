@@ -7,7 +7,7 @@ summary: >-
 #
 # Hosting note (a comment, not user-facing summary text): this is a
 # BROWSER-BRIDGE MCP — it reaches its site through the user's signed-in
-# tab via the fetchproxy bridge. A bridged registration also needs runtime
+# tab via ContextMint Bridge. A bridged registration also needs runtime
 # `fly-shared`, `bridge: true` and a `bridgePortEnv`, which are registration
 # fields this manifest has no schema for (set them over the control API).
 # `state.dataDir` below is required for `bridge`.
