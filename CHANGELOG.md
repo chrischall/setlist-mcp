@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.4](https://github.com/chrischall/setlist-mcp/compare/v1.1.3...v1.1.4) (2026-09-27)
+
+
+### Bug Fixes
+
+* **deps:** Bump the production-dependencies group with 5 updates ([#189](https://github.com/chrischall/setlist-mcp/issues/189)) ([cf1c192](https://github.com/chrischall/setlist-mcp/commit/cf1c192544b9ea9ebf94aab3f19d9bdff1968221))
+* **deps:** move to [@fetchproxy](https://github.com/fetchproxy) 3.4 for ContextMint Bridge errors, capability subsets and managed pins ([#191](https://github.com/chrischall/setlist-mcp/issues/191)) ([aef5999](https://github.com/chrischall/setlist-mcp/commit/aef599965f6e51e3b81a7b6aacb114fb766e8a5f))
+* **deps:** move to @chrischall/mcp-utils 2.8 and [@fetchproxy](https://github.com/fetchproxy) 3.4.1 for clearer browser-bridge errors ([#192](https://github.com/chrischall/setlist-mcp/issues/192)) ([70e55e4](https://github.com/chrischall/setlist-mcp/commit/70e55e4b502fc1c202139f5fed7bed0ab1bb82b5))
+
+
+### Documentation
+
+* use markdown links for the fetchproxy and ContextMint Bridge URLs ([#194](https://github.com/chrischall/setlist-mcp/issues/194)) ([7f9f7cb](https://github.com/chrischall/setlist-mcp/commit/7f9f7cb0573172be4226477ccf33dee74f8e73b0))
+
 ## [1.1.3](https://github.com/chrischall/setlist-mcp/compare/v1.1.2...v1.1.3) (2026-09-25)
 
 
