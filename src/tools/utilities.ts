@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { messageOf, minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
+import { EdgeBlockedError, messageOf, minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 
 interface CountriesResponse {
@@ -35,6 +35,18 @@ export function registerUtilityTools(server: McpServer, client: SetlistClient): 
         });
       } catch (e) {
         const msg = messageOf(e);
+        // A CDN/WAF refused the request before setlist.fm saw the key. Checked
+        // first: its message still says "HTTP 403", which the bad-key test
+        // below would read as a rejected key (chrischall/mcp-host#1015).
+        if (e instanceof EdgeBlockedError) {
+          return minifiedResult({
+            ok: false,
+            authenticated: false,
+            edge_blocked: true,
+            error: msg,
+            hint: `setlist.fm's CDN/WAF (${e.vendor}) blocked the request before it reached the API, so the key was not checked. This is usually a block on this host's IP address or request fingerprint — changing SETLIST_API_KEY will not fix it. Retry later or from another network.`,
+          });
+        }
         const noKey = /environment variable is required/.test(msg);
         const badKey = /\b(401|403)\b/.test(msg);
         return minifiedResult({
