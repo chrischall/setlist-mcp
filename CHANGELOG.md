@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.5](https://github.com/chrischall/setlist-mcp/compare/v1.1.4...v1.1.5) (2026-10-03)
+
+
+### Bug Fixes
+
+* **deps:** bump @chrischall/mcp-utils to 2.12.0 ([#198](https://github.com/chrischall/setlist-mcp/issues/198)) ([90210ef](https://github.com/chrischall/setlist-mcp/commit/90210ef0bf8699caec58d2769dbda69c801e2274))
+* **deps:** bump @chrischall/mcp-utils to 2.13.0 ([#199](https://github.com/chrischall/setlist-mcp/issues/199)) ([92c1135](https://github.com/chrischall/setlist-mcp/commit/92c11357d4254f90fee0b9e9cd87edb8d3153d73))
+* keep credentials and report edge_blocked on CDN/WAF blocks (mcp-utils 2.10.0) ([#197](https://github.com/chrischall/setlist-mcp/issues/197)) ([e2cd017](https://github.com/chrischall/setlist-mcp/commit/e2cd0174a43d4debce2d84ea3a582b6028c30d37))
+* report CDN/WAF blocks as edge_blocked, not a rejected credential (mcp-utils 2.9.0) ([#195](https://github.com/chrischall/setlist-mcp/issues/195)) ([7a13d34](https://github.com/chrischall/setlist-mcp/commit/7a13d34f20e6b551b56aabdd42f493bec6211dd7))
+
 ## [1.1.4](https://github.com/chrischall/setlist-mcp/compare/v1.1.3...v1.1.4) (2026-09-27)
 
 
