@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/chrischall/setlist-mcp/compare/v1.1.6...v1.1.7) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** Bump source-map-js ([#207](https://github.com/chrischall/setlist-mcp/issues/207)) ([d0e9452](https://github.com/chrischall/setlist-mcp/commit/d0e94522e721351532cf1981ddfa5be51c11da6a))
+* **deps:** update mcp-utils to 2.15.0 and fetchproxy to 3.6.0 for elicitation opt-out and safer bridge frames ([#205](https://github.com/chrischall/setlist-mcp/issues/205)) ([1d2cd39](https://github.com/chrischall/setlist-mcp/commit/1d2cd390bf210cbf560abb78db8bc8f457fa4d8f))
+
 ## [1.1.6](https://github.com/chrischall/setlist-mcp/compare/v1.1.5...v1.1.6) (2026-10-05)
 
 
