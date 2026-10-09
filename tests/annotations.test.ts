@@ -58,6 +58,16 @@ describe('tool annotations', () => {
     }
   });
 
+  it('every write states an explicit boolean destructiveHint, and no read claims destructive', () => {
+    for (const t of tools) {
+      if (t.annotations?.readOnlyHint === true) {
+        expect(t.annotations?.destructiveHint, t.name).not.toBe(true);
+      } else {
+        expect(typeof t.annotations?.destructiveHint, t.name).toBe('boolean');
+      }
+    }
+  });
+
   it('write descriptions name both auth paths and the real verification step', () => {
     for (const name of WRITES) {
       const d = tools.find((x) => x.name === name)!.description ?? '';
