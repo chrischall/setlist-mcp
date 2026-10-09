@@ -47,6 +47,16 @@ export function looksLoggedOut(html: string): boolean {
   return /href="\/(?:signin|login)\b/i.test(html);
 }
 
+/**
+ * The result contract, spelled out for callers (the descriptions are the only
+ * place an MCP client learns it). `attended` is the state the re-read OBSERVED,
+ * not the one asked for, so an unverified toggle can never read as success.
+ */
+const RESULT_NOTE =
+  ' Returns `attended`, `changed` and `verified`. `verified: true` means the page shows the requested state. ' +
+  'If `verified` is false, the toggle could not be checked: `attended` holds the state the re-read saw, or null if the page was unreadable, ' +
+  'and `changed` is false — check the show on setlist.fm before reporting success.';
+
 const SESSION_EXPIRED_MSG =
   'Your setlist.fm session is signed out or expired — the page rendered logged-out. ' +
   'Sign back into www.setlist.fm in your browser and retry — the bridge re-reads the tab on the next call. ' +
@@ -168,6 +178,8 @@ async function setAttendanceUnlocked(
       ...summary,
       attended: desired,
       changed: false,
+      // The page was just read and already shows the desired state.
+      verified: true,
       note: desired ? 'Already marked as attended.' : 'Not currently attended — nothing to remove.',
     };
   }
@@ -220,6 +232,7 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     {
       description:
         "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading the setlist page." +
+        RESULT_NOTE +
         ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({
@@ -234,6 +247,7 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     {
       description:
         'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading the setlist page.' +
+        RESULT_NOTE +
         ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({

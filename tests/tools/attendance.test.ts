@@ -68,8 +68,28 @@ describe('attendance tools', () => {
   it('mark is a no-op when already attended (no write)', async () => {
     mockPage.mockResolvedValue(ATTENDED);
     const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
-    expect(out).toMatchObject({ attended: true, changed: false });
+    expect(out).toMatchObject({ attended: true, changed: false, verified: true });
     expect(mockAjax).not.toHaveBeenCalled();
+  });
+
+  it('unmark is a no-op when not attended, and still reports verified', async () => {
+    mockPage.mockResolvedValue(NOT_ATTENDED);
+    const out = parse(await harness.callTool('setlist_unmark_attended', { setlistId: '1234' }));
+    expect(out).toMatchObject({ attended: false, changed: false, verified: true });
+    expect(mockAjax).not.toHaveBeenCalled();
+  });
+
+  // The result contract changed in #208: `attended` is the OBSERVED state and
+  // may be null, and `changed` is false when the toggle is unverified. Callers
+  // only learn that from the description, so pin it there.
+  it('both descriptions document the verified / nullable-attended result contract', async () => {
+    const { tools } = await harness.client.listTools();
+    for (const name of ['setlist_mark_attended', 'setlist_unmark_attended']) {
+      const d = tools.find((t) => t.name === name)!.description!;
+      expect(d, name).toMatch(/`verified`/);
+      expect(d, name).toMatch(/`attended`[^.]*null/);
+      expect(d, name).toMatch(/`changed`/);
+    }
   });
 
   // A reversible toggle on your own account: no `confirm` gate (the
