@@ -265,6 +265,45 @@ describe('resolveConcerts (core)', () => {
     expect(results[2].pending).toBe(true);
     expect(request).toHaveBeenCalledTimes(2); // C never hit the API
   });
+
+  // The budget used to be checked only between concerts, so one slow concert
+  // could still run its whole fallback chain (up to 5 paced calls, each with a
+  // 15s timeout) well past it. It is now checked before every upstream call.
+  it('stops a concert mid-fallback once the budget is spent (no further calls), marking it pending', async () => {
+    let t = 0;
+    const request = vi.fn(async () => {
+      t += 2000; // a slow first search blows the budget and finds nothing
+      return { setlist: [] };
+    });
+    const results = await resolveConcerts(
+      [
+        { artist: 'Slow', date: '2025-01-01' },
+        { artist: 'Next', date: '2025-01-02' },
+      ],
+      { request, sleep: async (ms) => { t += ms; }, now: () => t, paceMs: 0, budgetMs: 1500 },
+    );
+    expect(request).toHaveBeenCalledTimes(1); // mbid / normalized fallbacks skipped
+    expect(results[0]).toMatchObject({ match: null, pending: true });
+    expect(results[0].error).toBeUndefined();
+    expect(results[1].pending).toBe(true);
+    expect(summarizeResults(results).note).toMatch(/2 pending/);
+  });
+
+  it('keeps a found match but skips the tour fallback once the budget is spent', async () => {
+    let t = 0;
+    const request = vi.fn(async () => {
+      t += 2000;
+      return { setlist: [setlist({ sets: { set: [] } })] }; // an empty stub on a tour
+    });
+    const [r] = await resolveConcerts(
+      [{ artist: 'Oasis', date: '2025-08-28' }],
+      { request, sleep: async (ms) => { t += ms; }, now: () => t, paceMs: 0, budgetMs: 1500 },
+    );
+    expect(request).toHaveBeenCalledTimes(1); // no tour search
+    expect(r.match).toMatchObject({ setlistId: 's1', hasSongs: false });
+    expect(r.tourReference).toBeUndefined();
+    expect(r.pending).toBeUndefined();
+  });
 });
 
 describe('summarizeResults', () => {

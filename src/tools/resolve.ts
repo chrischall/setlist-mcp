@@ -262,10 +262,28 @@ async function resolveOne(req: RequestFn, c: Concert, tourFallback: boolean): Pr
   };
   // Empty stub: try to offer the tour's typical (populated) setlist as a labeled reference.
   if (songCount === 0 && tourFallback) {
-    const ref = await findTourReference(req, best, c.date);
-    if (ref) result.tourReference = ref;
+    try {
+      const ref = await findTourReference(req, best, c.date);
+      if (ref) result.tourReference = ref;
+    } catch (err) {
+      // Out of budget: the reference is optional — keep the match without it.
+      if (!(err instanceof BudgetExhausted)) throw err;
+    }
   }
   return result;
+}
+
+/**
+ * Thrown by the budget gate in place of an upstream call once the wall-clock
+ * budget is spent. Never surfaces to the caller: the concert in flight comes
+ * back `pending` (or, at the optional tour-fallback step, keeps its match
+ * without a reference).
+ */
+class BudgetExhausted extends Error {
+  constructor() {
+    super('resolve_concerts time budget exhausted');
+    this.name = 'BudgetExhausted';
+  }
 }
 
 /**
@@ -301,10 +319,17 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps): P
   // Gate every upstream call to at least `paceMs` apart (the first runs
   // immediately). The serialized throttle queue means even concurrent callers
   // can't burst past the spacing.
-  const throttle = createThrottle({ minIntervalMs: paceMs, now, sleep });
-  const req: RequestFn = (method, path, opts) => throttle(() => baseRequest(method, path, opts));
-
+  // The budget is checked before EVERY upstream call (after the pacing wait),
+  // not just between concerts: one concert can run a chain of up to five
+  // calls, each with its own timeout and 429 retry.
   const start = now();
+  const throttle = createThrottle({ minIntervalMs: paceMs, now, sleep });
+  const req: RequestFn = (method, path, opts) =>
+    throttle(() => {
+      if (now() - start >= budgetMs) throw new BudgetExhausted();
+      return baseRequest(method, path, opts);
+    });
+
   const results: ResolveResult[] = [];
   let budgetSpent = false;
   for (const c of concerts) {
@@ -321,6 +346,11 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps): P
       results.push(await resolveOne(req, c, tourFallback));
     } catch (err) {
       if (isBatchFatal(err)) throw err;
+      if (err instanceof BudgetExhausted) {
+        budgetSpent = true;
+        results.push({ input: c, match: null, alternatives: 0, pending: true });
+        continue;
+      }
       results.push({ input: c, match: null, alternatives: 0, error: messageOf(err) });
     }
   }
