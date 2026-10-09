@@ -10,9 +10,17 @@ import {
   type Throttle,
 } from '@chrischall/mcp-utils';
 
-// Load .env for local dev (guarded; the mcpb bundle omits dotenv).
-const __dirname = dirname(fileURLToPath(import.meta.url));
-await loadDotenvSafely({ path: join(__dirname, '..', '.env'), override: false });
+// Load .env for local dev (guarded; the mcpb bundle omits dotenv). The
+// try/catch mirrors client.ts: in a runtime where `import.meta.url` is
+// undefined, `fileURLToPath(undefined)` throws at module init — and since
+// tools/attendance.ts imports this module statically, an unguarded throw here
+// would take the whole server down, not just the attendance tools.
+try {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  await loadDotenvSafely({ path: join(dir, '..', '.env'), override: false });
+} catch {
+  /* non-Node runtime (Workers): no .env to load */
+}
 
 const RETRY_5XX = 3; // www.setlist.fm intermittently returns 500/502/503 from its gateway
 const RETRY_DELAY_MS = 1200;

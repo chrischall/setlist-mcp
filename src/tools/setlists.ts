@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { isoToDmy, isoToCompactTimestamp } from '@chrischall/mcp-utils';
+import { isoToDmy, isoToCompactTimestamp, toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -24,7 +24,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
       description:
         "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year (provide at least one). Combine filters to disambiguate — artistName + date can span multiple cities, so add cityName/cityId or venueName/venueId to pin the exact show. Omit the artist and pass venueName/venueId + date to list EVERY performer at a venue or festival that day. Every result includes songCount, setCount, and hasSongs, so you can skip empty 'stub' setlists (hasSongs: false) without a second fetch." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         artistName: z.string().optional().describe('Artist name'),
@@ -68,7 +68,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         "Get a setlist.fm setlist by its ID, including the full song list and event details." +
         SETLIST_SHAPE_NOTE +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         setlistId: z.string().describe('Setlist ID (e.g. 63de4613)'),
@@ -87,7 +87,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
         "Get a specific historical version of a setlist by its version ID. Setlists are wiki-edited; each edit has a version ID returned in a setlist's `versionId` field." +
         SETLIST_SHAPE_NOTE +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         versionId: z.string().describe('Setlist version ID'),

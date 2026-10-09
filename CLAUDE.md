@@ -31,6 +31,8 @@ src/
                   #   via createApiClient), normalizes response eventDate → ISO
                   #   (deepMapStringField + dmyToIso from @chrischall/mcp-utils),
                   #   then augmentSetlists(...) annotates each setlist
+  errors.ts       # SetlistConfigError — the deferred missing-key error, side-effect
+                  #   free so tools/* can classify it without importing client.ts
   augment.ts      # augmentSetlists — walks a response, tags every setlist object
                   #   with songCount / setCount / hasSongs so callers skip empty stubs
   web-client.ts   # SetlistWebClient — authenticated www.setlist.fm (website) client

@@ -119,6 +119,33 @@ describe('attendance tools', () => {
     expect(text).toMatch(/rate-limited|layout/i);
     expect(text).toMatch(/control/i);
   });
+
+  // An unverified write must report the OBSERVED state, never the desired one —
+  // a model summarizing `attended: true, changed: true` reports success.
+  it('reports the observed state (not the desired one) when the re-read shows no change', async () => {
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(NOT_ATTENDED);
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
+    expect(out).toMatchObject({ attended: false, changed: false, verified: false });
+    expect(out.warning).toMatch(/did not confirm/i);
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports attended: null when the re-read is ambiguous (no control, not logged-out)', async () => {
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(UNEXPECTED);
+    const out = parse(await harness.callTool('setlist_mark_attended', { setlistId: '1234' }));
+    expect(out).toMatchObject({ attended: null, changed: false, verified: false });
+    expect(out.warning).toMatch(/did not confirm/i);
+  });
+
+  it('raises the session-expired error when the verification re-read renders logged-out', async () => {
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(LOGGED_OUT);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
+    expect(res.isError).toBeTruthy();
+    const text = (res.content[0] as { text: string }).text;
+    expect(text).toMatch(/could not be verified/i);
+    expect(text).toMatch(/signed out|logged-out/i);
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────

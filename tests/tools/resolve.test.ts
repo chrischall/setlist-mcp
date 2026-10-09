@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
-import { ApiError } from '@chrischall/mcp-utils';
-import { client } from '../../src/client.js';
+import { ApiError, UnauthorizedError } from '@chrischall/mcp-utils';
+import { client, SetlistClient } from '../../src/client.js';
 import {
   registerResolveTools,
   resolveConcerts,
@@ -110,6 +110,48 @@ describe('resolveConcerts (core)', () => {
     expect(results[1].error).toMatch(/503/);
     expect(results[2].match?.setlistId).toBe('s1');
     expect(results[0].error).toBeUndefined();
+  });
+
+  // Per-concert isolation is for failures that ARE per-concert. A missing or
+  // rejected key fails every concert identically, so the batch must fail fast
+  // with the actionable message instead of pacing through N identical errors.
+  describe('fails fast on errors no concert can escape', () => {
+    const batch = [
+      { artist: 'A', date: '2025-01-01' },
+      { artist: 'B', date: '2025-01-02' },
+      { artist: 'C', date: '2025-01-03' },
+    ];
+
+    it('aborts the batch on a 401 after one upstream call', async () => {
+      const request = vi.fn(async () => {
+        throw new UnauthorizedError('setlist.fm');
+      });
+      await expect(resolveConcerts(batch, fast(request))).rejects.toBeInstanceOf(UnauthorizedError);
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('aborts the batch on a 403 (rejected key) after one upstream call', async () => {
+      const request = vi.fn(async () => {
+        throw new ApiError(403, 'setlist.fm error 403 for GET /1.0/search/setlists');
+      });
+      await expect(resolveConcerts(batch, fast(request))).rejects.toThrow(/403/);
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('aborts the batch on the deferred missing-key config error', async () => {
+      const prev = process.env.SETLIST_API_KEY;
+      delete process.env.SETLIST_API_KEY;
+      try {
+        const keyless = new SetlistClient();
+        const request = vi.fn((m: string, p: string, o?: { query?: Record<string, string | undefined> }) =>
+          keyless.request(m, p, o),
+        );
+        await expect(resolveConcerts(batch, fast(request as never))).rejects.toThrow(/SETLIST_API_KEY/);
+        expect(request).toHaveBeenCalledTimes(1);
+      } finally {
+        if (prev !== undefined) process.env.SETLIST_API_KEY = prev;
+      }
+    });
   });
 
   it('offers a same-tour reference for an empty stub, picking the closest populated date', async () => {
@@ -222,6 +264,45 @@ describe('resolveConcerts (core)', () => {
     expect(results[1].match).not.toBeNull();
     expect(results[2].pending).toBe(true);
     expect(request).toHaveBeenCalledTimes(2); // C never hit the API
+  });
+
+  // The budget used to be checked only between concerts, so one slow concert
+  // could still run its whole fallback chain (up to 5 paced calls, each with a
+  // 15s timeout) well past it. It is now checked before every upstream call.
+  it('stops a concert mid-fallback once the budget is spent (no further calls), marking it pending', async () => {
+    let t = 0;
+    const request = vi.fn(async () => {
+      t += 2000; // a slow first search blows the budget and finds nothing
+      return { setlist: [] };
+    });
+    const results = await resolveConcerts(
+      [
+        { artist: 'Slow', date: '2025-01-01' },
+        { artist: 'Next', date: '2025-01-02' },
+      ],
+      { request, sleep: async (ms) => { t += ms; }, now: () => t, paceMs: 0, budgetMs: 1500 },
+    );
+    expect(request).toHaveBeenCalledTimes(1); // mbid / normalized fallbacks skipped
+    expect(results[0]).toMatchObject({ match: null, pending: true });
+    expect(results[0].error).toBeUndefined();
+    expect(results[1].pending).toBe(true);
+    expect(summarizeResults(results).note).toMatch(/2 pending/);
+  });
+
+  it('keeps a found match but skips the tour fallback once the budget is spent', async () => {
+    let t = 0;
+    const request = vi.fn(async () => {
+      t += 2000;
+      return { setlist: [setlist({ sets: { set: [] } })] }; // an empty stub on a tour
+    });
+    const [r] = await resolveConcerts(
+      [{ artist: 'Oasis', date: '2025-08-28' }],
+      { request, sleep: async (ms) => { t += ms; }, now: () => t, paceMs: 0, budgetMs: 1500 },
+    );
+    expect(request).toHaveBeenCalledTimes(1); // no tour search
+    expect(r.match).toMatchObject({ setlistId: 's1', hasSongs: false });
+    expect(r.tourReference).toBeUndefined();
+    expect(r.pending).toBeUndefined();
   });
 });
 

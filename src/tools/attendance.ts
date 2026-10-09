@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { minifiedResult } from '@chrischall/mcp-utils';
+import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { webClient, isTransient5xx } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -178,6 +178,7 @@ async function setAttendanceUnlocked(
   // and only re-toggle (with the freshly rendered control) while the state is
   // still wrong. Bounded so a persistently failing gateway surfaces as an error.
   let after: AttendanceControl | null = control;
+  let afterHtml = '';
   for (let attempt = 1; ; attempt++) {
     const u = new URL(after.ajaxUrl, meta.url);
     let toggleErr: unknown;
@@ -187,15 +188,27 @@ async function setAttendanceUnlocked(
       if (!isTransient5xx(err)) throw err;
       toggleErr = err;
     }
-    after = parseAttendance(await webClient.fetchPage(path));
+    afterHtml = await webClient.fetchPage(path);
+    after = parseAttendance(afterHtml);
     if (toggleErr === undefined || after?.attended === desired) break;
     if (!after || attempt >= MAX_TOGGLE_ATTEMPTS) throw toggleErr;
   }
+  // A logged-out re-read can't confirm anything — and the session is the real
+  // problem, so surface the actionable expiry message rather than a vague
+  // "check on setlist.fm" warning.
+  if (!after && looksLoggedOut(afterHtml)) {
+    throw new SessionExpiredError(
+      'The attendance toggle was sent, but it could not be verified — the re-read page rendered logged-out. ' +
+        SESSION_EXPIRED_MSG,
+    );
+  }
   const verified = after?.attended === desired;
+  // Report the OBSERVED state, never the desired one: an unverified write that
+  // still said `attended: <desired>, changed: true` reads as success.
   return {
     ...summary,
-    attended: desired,
-    changed: true,
+    attended: after ? after.attended : null,
+    changed: verified,
     verified,
     ...(verified ? {} : { warning: 'Toggle sent, but the re-read did not confirm the new state — check on setlist.fm.' }),
   };
@@ -206,9 +219,9 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     'setlist_mark_attended',
     {
       description:
-        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your session (needs SETLIST_SESSION_COOKIE). Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading your attended list." +
+        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading the setlist page." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID (e.g. from setlist_search_setlists / resolve_concerts)'),
       }),
@@ -220,9 +233,9 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     'setlist_unmark_attended',
     {
       description:
-        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your session. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading.' +
+        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading the setlist page.' +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: false, idempotentHint: true, destructiveHint: true, openWorldHint: true },
+      annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID to remove from your attended shows'),
       }),

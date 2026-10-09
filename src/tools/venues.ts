@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
+import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -18,7 +19,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
       description:
         "Search setlist.fm for venues by name and/or location. Returns matching venues with their venue ID — use it with setlist_get_venue or setlist_get_venue_setlists." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         name: z.string().optional().describe('Venue name'),
@@ -43,7 +44,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
     'setlist_get_venue',
     {
       description: "Get a setlist.fm venue by its ID." + ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         venueId: z.string().describe('Venue ID'),
@@ -61,7 +62,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
       description:
         "Get setlists performed at a venue, by venue ID (most recent first). Paginated via `p`." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         venueId: z.string().describe('Venue ID'),

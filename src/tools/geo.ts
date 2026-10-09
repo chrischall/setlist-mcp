@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
+import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -18,7 +19,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
       description:
         "Search setlist.fm for cities by name and/or location. Returns cities with their geoId — use it as cityId in setlist_search_setlists / setlist_search_venues, or with setlist_get_city." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         name: z.string().optional().describe('City name'),
@@ -41,7 +42,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
     'setlist_get_city',
     {
       description: "Get a city by its geoId." + ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         geoId: z.string().describe("City's geoId"),
@@ -62,7 +63,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
       inputSchema: z.object({
         view: viewArg(),
       }),
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
     },
     async ({ view }) => {
       const data = await client.request('GET', '/1.0/search/countries');
