@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
+import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -18,7 +19,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
       description:
         "Get a setlist.fm user's public profile by their userId (their setlist.fm username)." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
@@ -36,7 +37,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
       description:
         "Get the concerts a setlist.fm user has marked as attended. Paginated via `p`." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),
@@ -59,7 +60,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
       description:
         "Get the setlists a setlist.fm user has created or edited. Paginated via `p`." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: true },
+      annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
         view: viewArg(),
         userId: z.string().describe('setlist.fm userId (username)'),

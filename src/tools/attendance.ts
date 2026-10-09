@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { minifiedResult } from '@chrischall/mcp-utils';
+import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { webClient, isTransient5xx } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
@@ -219,9 +219,9 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     'setlist_mark_attended',
     {
       description:
-        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your session (needs SETLIST_SESSION_COOKIE). Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading your attended list." +
+        "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading the setlist page." +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID (e.g. from setlist_search_setlists / resolve_concerts)'),
       }),
@@ -233,9 +233,9 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
     'setlist_unmark_attended',
     {
       description:
-        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your session. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading.' +
+        'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading the setlist page.' +
         ATTRIBUTION_NOTE,
-      annotations: { readOnlyHint: false, idempotentHint: true, destructiveHint: true, openWorldHint: true },
+      annotations: toolAnnotations({ readOnly: false, idempotent: true, destructive: false, openWorld: true }),
       inputSchema: z.object({
         setlistId: z.string().describe('Setlist ID to remove from your attended shows'),
       }),
