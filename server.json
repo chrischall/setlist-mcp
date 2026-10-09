@@ -18,8 +18,8 @@
       "environmentVariables": [
         {
           "name": "SETLIST_API_KEY",
-          "description": "Your setlist.fm API key (apply at setlist.fm/settings/api)",
-          "isRequired": true,
+          "description": "Your setlist.fm API key (apply at setlist.fm/settings/api). Required for the data (read) tools; the attendance tools and setlist_id_from_url work without it.",
+          "isRequired": false,
           "format": "string",
           "isSecret": true
         },
@@ -36,6 +36,34 @@
           "isRequired": false,
           "format": "string",
           "isSecret": true
+        },
+        {
+          "name": "SETLIST_DISABLE_FETCHPROXY",
+          "description": "Set to 1 to turn the browser (fetchproxy) fallback off for the attendance tools (1/true/yes/on).",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "FETCHPROXY_WS_PORT",
+          "description": "Localhost port of the fetchproxy concentrator the ContextMint Bridge extension connects to (default 37149). Every MCP on one machine shares it, so move it for all of them or not at all.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "FETCHPROXY_WS_HOST",
+          "description": "Bind interface for the fetchproxy concentrator, a literal IP only (default 127.0.0.1). Keep on loopback; it exists for hosted deployments that run each MCP in its own network namespace.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "FETCHPROXY_IDENTITY_DIR",
+          "description": "Absolute path where the fetchproxy long-term identity keypair is stored (default ~/.fetchproxy/identity/).",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
         }
       ]
     }
