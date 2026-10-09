@@ -178,6 +178,7 @@ async function setAttendanceUnlocked(
   // and only re-toggle (with the freshly rendered control) while the state is
   // still wrong. Bounded so a persistently failing gateway surfaces as an error.
   let after: AttendanceControl | null = control;
+  let afterHtml = '';
   for (let attempt = 1; ; attempt++) {
     const u = new URL(after.ajaxUrl, meta.url);
     let toggleErr: unknown;
@@ -187,15 +188,27 @@ async function setAttendanceUnlocked(
       if (!isTransient5xx(err)) throw err;
       toggleErr = err;
     }
-    after = parseAttendance(await webClient.fetchPage(path));
+    afterHtml = await webClient.fetchPage(path);
+    after = parseAttendance(afterHtml);
     if (toggleErr === undefined || after?.attended === desired) break;
     if (!after || attempt >= MAX_TOGGLE_ATTEMPTS) throw toggleErr;
   }
+  // A logged-out re-read can't confirm anything — and the session is the real
+  // problem, so surface the actionable expiry message rather than a vague
+  // "check on setlist.fm" warning.
+  if (!after && looksLoggedOut(afterHtml)) {
+    throw new SessionExpiredError(
+      'The attendance toggle was sent, but it could not be verified — the re-read page rendered logged-out. ' +
+        SESSION_EXPIRED_MSG,
+    );
+  }
   const verified = after?.attended === desired;
+  // Report the OBSERVED state, never the desired one: an unverified write that
+  // still said `attended: <desired>, changed: true` reads as success.
   return {
     ...summary,
-    attended: desired,
-    changed: true,
+    attended: after ? after.attended : null,
+    changed: verified,
     verified,
     ...(verified ? {} : { warning: 'Toggle sent, but the re-read did not confirm the new state — check on setlist.fm.' }),
   };
