@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.8](https://github.com/chrischall/setlist-mcp/compare/v1.1.7...v1.1.8) (2026-10-09)
+
+
+### Bug Fixes
+
+* annotate tools truthfully and sync manifests with the served tools ([#213](https://github.com/chrischall/setlist-mcp/issues/213)) ([87c755b](https://github.com/chrischall/setlist-mcp/commit/87c755b58a48a19b8b60a819ea067ce2cab9da4c))
+* **attendance:** document the verified result and report it on no-ops ([#211](https://github.com/chrischall/setlist-mcp/issues/211)) ([dfefcd9](https://github.com/chrischall/setlist-mcp/commit/dfefcd9671c7eeddcba31cfcda269a23bba063e6))
+* declare the plugin MCP config under the mcpServers key Claude Code reads ([#214](https://github.com/chrischall/setlist-mcp/issues/214)) ([d810a19](https://github.com/chrischall/setlist-mcp/commit/d810a197759843ab1b5d1616b5ab3a96803a386a))
+* **deps:** update @chrischall/mcp-utils to 3.0.0 ([#212](https://github.com/chrischall/setlist-mcp/issues/212)) ([9baaa53](https://github.com/chrischall/setlist-mcp/commit/9baaa532ba177efbef8b24030579425426d3d4ca))
+* resolve low-severity audit findings ([#208](https://github.com/chrischall/setlist-mcp/issues/208)) ([0a8e5d7](https://github.com/chrischall/setlist-mcp/commit/0a8e5d79427e1982252c7b170b990b8df3b7231e))
+
 ## [1.1.7](https://github.com/chrischall/setlist-mcp/compare/v1.1.6...v1.1.7) (2026-10-07)
 
 
