@@ -9,6 +9,7 @@ import {
   type ApiClient,
 } from '@chrischall/mcp-utils';
 import { augmentSetlists } from './augment.js';
+import { SetlistConfigError } from './errors.js';
 
 // Load .env for local dev; silently skip if dotenv is unavailable (e.g. the
 // mcpb bundle). `loadDotenvSafely` swallows a missing dotenv module and never
@@ -53,7 +54,7 @@ export class SetlistClient {
     const key = opts?.apiKey ?? readEnvVar('SETLIST_API_KEY');
     if (!key) {
       this.apiKey = null;
-      this.configError = new Error('SETLIST_API_KEY environment variable is required');
+      this.configError = new SetlistConfigError('SETLIST_API_KEY environment variable is required');
     } else {
       this.apiKey = key;
       this.configError = null;

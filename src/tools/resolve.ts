@@ -1,7 +1,16 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { ApiError, createThrottle, isoToDmy, messageOf, minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
+import {
+  ApiError,
+  UnauthorizedError,
+  createThrottle,
+  isoToDmy,
+  messageOf,
+  minifiedResult,
+  toolAnnotations,
+} from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
+import { SetlistConfigError } from '../errors.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
 
 const MAX_BATCH = 24;
@@ -259,6 +268,20 @@ async function resolveOne(req: RequestFn, c: Concert, tourFallback: boolean): Pr
   return result;
 }
 
+/**
+ * Errors no concert can escape: a missing key (the deferred config error), a
+ * rejected key (401) or a forbidden/edge-blocked request (403). Every concert
+ * in the batch would fail identically, so these abort the batch with the
+ * actionable message instead of being recorded per concert.
+ */
+function isBatchFatal(err: unknown): boolean {
+  return (
+    err instanceof SetlistConfigError ||
+    err instanceof UnauthorizedError ||
+    (err instanceof ApiError && (err.status === 401 || err.status === 403))
+  );
+}
+
 const defaultSleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /**
@@ -292,10 +315,12 @@ export async function resolveConcerts(concerts: Concert[], deps: ResolveDeps): P
     }
     // Per-concert isolation: one bad lookup (a 500, a timeout, a 429 after its
     // retry) must not throw away the results — and paced upstream calls —
-    // already spent on the rest of the batch.
+    // already spent on the rest of the batch. Auth/config failures are not
+    // per-concert (see isBatchFatal) and fail the call fast.
     try {
       results.push(await resolveOne(req, c, tourFallback));
     } catch (err) {
+      if (isBatchFatal(err)) throw err;
       results.push({ input: c, match: null, alternatives: 0, error: messageOf(err) });
     }
   }
@@ -330,7 +355,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
     'setlist_resolve_concerts',
     {
       description:
-        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. A concert whose lookup fails upstream comes back with `match: null` and an `error` message (counted in `errored`) while the rest of the batch still resolves — re-call with just those. Keep batches ≤24." +
+        "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. A concert whose lookup fails upstream comes back with `match: null` and an `error` message (counted in `errored`) while the rest of the batch still resolves — re-call with just those. A missing or rejected API key (401/403) fails the whole call at once instead, since no concert could resolve. Keep batches ≤24." +
         ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
