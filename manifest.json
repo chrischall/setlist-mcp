@@ -136,6 +136,10 @@
       "description": "Remove a show from your attended list (needs SETLIST_SESSION_COOKIE; undo with setlist_mark_attended)"
     },
     {
+      "name": "setlist_id_from_url",
+      "description": "Extract a setlist ID from a setlist.fm setlist URL (local parse, no network)"
+    },
+    {
       "name": "setlist_healthcheck",
       "description": "Verify the API key works against the setlist.fm API"
     }

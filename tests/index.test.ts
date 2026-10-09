@@ -6,6 +6,7 @@ import { registerGeoTools } from '../src/tools/geo.js';
 import { registerUserTools } from '../src/tools/users.js';
 import { registerResolveTools } from '../src/tools/resolve.js';
 import { registerAttendanceTools } from '../src/tools/attendance.js';
+import { registerUrlTools } from '../src/tools/urls.js';
 import { registerUtilityTools } from '../src/tools/utilities.js';
 import { client } from '../src/client.js';
 import { createTestHarness } from './helpers.js';
@@ -19,7 +20,7 @@ describe('tool registry', () => {
     if (harness) await harness.close();
   });
 
-  it('includes all 19 expected tools', async () => {
+  it('includes all 20 expected tools', async () => {
     harness = await createTestHarness((server) => {
       registerArtistTools(server, client);
       registerSetlistTools(server, client);
@@ -28,6 +29,7 @@ describe('tool registry', () => {
       registerUserTools(server, client);
       registerResolveTools(server, client);
       registerAttendanceTools(server, client);
+      registerUrlTools(server);
       registerUtilityTools(server, client);
     });
 
@@ -53,10 +55,11 @@ describe('tool registry', () => {
       'setlist_resolve_concerts',
       'setlist_mark_attended',
       'setlist_unmark_attended',
+      'setlist_id_from_url',
       'setlist_healthcheck',
     ].sort();
 
     expect(allNames).toEqual(expected);
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(20);
   });
 });
