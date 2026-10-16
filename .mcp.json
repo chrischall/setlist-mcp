@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "setlist": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "setlist-mcp"],
       "env": {
         "SETLIST_API_KEY": "${SETLIST_API_KEY}"
       }
