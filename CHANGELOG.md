@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.9](https://github.com/chrischall/setlist-mcp/compare/v1.1.8...v1.1.9) (2026-10-16)
+
+
+### Bug Fixes
+
+* **attendance:** report an expired session, not a gateway error, when a toggle 5xx is followed by a logged-out page ([#218](https://github.com/chrischall/setlist-mcp/issues/218)) ([d7d797e](https://github.com/chrischall/setlist-mcp/commit/d7d797e85579e20b29834784ec887b4a3cfce94e))
+* **deps:** Bump the production-dependencies group with 2 updates ([#216](https://github.com/chrischall/setlist-mcp/issues/216)) ([d048fc6](https://github.com/chrischall/setlist-mcp/commit/d048fc6aee5c8e19e89ec6ea5798895eee9d2d47))
+* **plugin:** launch the published package so marketplace installs start ([#219](https://github.com/chrischall/setlist-mcp/issues/219)) ([e231287](https://github.com/chrischall/setlist-mcp/commit/e2312874766266f330946e078dce546532b940ce))
+
 ## [1.1.8](https://github.com/chrischall/setlist-mcp/compare/v1.1.7...v1.1.8) (2026-10-09)
 
 
