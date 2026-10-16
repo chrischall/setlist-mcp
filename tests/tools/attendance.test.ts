@@ -289,6 +289,19 @@ describe('attendance — 5xx on the toggle', () => {
     expect(mockAjax.mock.calls.length).toBeLessThanOrEqual(3);
   });
 
+  it('surfaces session-expired (not the raw 5xx) when the re-read after a 5xx toggle renders logged-out', async () => {
+    mockAjax.mockRejectedValueOnce(gateway());
+    mockPage.mockResolvedValueOnce(NOT_ATTENDED).mockResolvedValueOnce(LOGGED_OUT);
+    const res = await harness.callTool('setlist_mark_attended', { setlistId: '1234' });
+    expect(res.isError).toBeTruthy();
+    const text = (res.content[0] as { text: string }).text;
+    expect(text).toMatch(/could not be verified/i);
+    expect(text).toMatch(/signed out|logged-out/i);
+    expect(text).not.toMatch(/504/);
+    // Never re-toggles blind: the logged-out page has no control to replay.
+    expect(mockAjax).toHaveBeenCalledTimes(1);
+  });
+
   it('does not swallow a non-5xx toggle failure', async () => {
     mockAjax.mockRejectedValueOnce(new ApiError(403, 'setlist.fm (web) error 403'));
     mockPage.mockResolvedValue(NOT_ATTENDED);
