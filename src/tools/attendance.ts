@@ -203,6 +203,10 @@ async function setAttendanceUnlocked(
     afterHtml = await webClient.fetchPage(path);
     after = parseAttendance(afterHtml);
     if (toggleErr === undefined || after?.attended === desired) break;
+    // A logged-out re-read after a 5xx means the session died mid-batch (the
+    // gateway error usually rides along). Fall through to the session-expired
+    // branch below — the actionable message — instead of rethrowing the 5xx.
+    if (!after && looksLoggedOut(afterHtml)) break;
     if (!after || attempt >= MAX_TOGGLE_ATTEMPTS) throw toggleErr;
   }
   // A logged-out re-read can't confirm anything — and the session is the real
