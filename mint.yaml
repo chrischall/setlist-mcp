@@ -4,6 +4,15 @@ slug: setlist
 summary: >-
   setlist.fm concert data for Claude — search setlists, artists, venues,
   tours, and cities via natural language
+examples:
+  - prompt: What did Radiohead play at their most recent show, and how many songs was it?
+    note: Finds the artist, then pulls their latest setlist
+  - prompt: Who played at Red Rocks Amphitheatre on 2023-08-12, and what was each set?
+    note: Searches every performer at one venue on one date
+  - prompt: >-
+      Find the setlists for these shows I went to: Pearl Jam 2018-08-10 in
+      Seattle, and Phish 2019-12-31 in New York
+    note: Resolves a batch of concerts in a single call
 #
 # Hosting note (a comment, not user-facing summary text): this is a
 # BROWSER-BRIDGE MCP — it reaches its site through the user's signed-in
