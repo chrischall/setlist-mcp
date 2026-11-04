@@ -4,6 +4,7 @@ import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { PLACE_LOOKUP_META } from './hints.js';
 
 const page = z
   .number()
@@ -16,6 +17,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
   server.registerTool(
     'setlist_search_cities',
     {
+      _meta: PLACE_LOOKUP_META,
       description:
         "Search setlist.fm for cities by name and/or location. Returns cities with their geoId — use it as cityId in setlist_search_setlists / setlist_search_venues, or with setlist_get_city." +
         ATTRIBUTION_NOTE,
@@ -41,6 +43,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
   server.registerTool(
     'setlist_get_city',
     {
+      _meta: PLACE_LOOKUP_META,
       description: "Get a city by its geoId." + ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
@@ -57,6 +60,7 @@ export function registerGeoTools(server: McpServer, client: SetlistClient): void
   server.registerTool(
     'setlist_search_countries',
     {
+      _meta: PLACE_LOOKUP_META,
       description:
         "List all countries supported by setlist.fm, with their ISO country codes. Use a code as countryCode in setlist_search_setlists." +
         ATTRIBUTION_NOTE,

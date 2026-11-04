@@ -12,6 +12,7 @@ import {
 import type { SetlistClient } from '../client.js';
 import { SetlistConfigError } from '../errors.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { SHOW_LOOKUP_META } from './hints.js';
 
 const MAX_BATCH = 24;
 // Pace upstream calls to ~2 req/sec (setlist.fm's standard-tier limit). Bursting
@@ -384,6 +385,7 @@ export function registerResolveTools(server: McpServer, client: SetlistClient): 
   server.registerTool(
     'setlist_resolve_concerts',
     {
+      _meta: SHOW_LOOKUP_META,
       description:
         "Resolve many concerts to their setlists in ONE call (instead of 2+ per show). Given up to 24 `{artist, date, city?, venue?}`, returns the best-match setlist for each — `{setlistId, url, eventDate, artist, venue, city, tour, songCount, hasSongs}` — plus a `{matched, stubs, tourReferenced, unmatched, pending, errored}` summary. For each: searches artist + date (narrowed by your city/venue), and on a miss falls back to a relevance artist lookup (by mbid) and a punctuation-normalized name so format variants still resolve. `hasSongs: false` flags an empty stub page (no songs logged on setlist.fm). When a show is a stub, if the act toured a repeating set the result also includes a `tourReference` — a populated setlist from the SAME tour on a different date (with `songs` + its own `url`), clearly labeled as a reference, NOT this exact show (set `tourFallback: false` to skip these extra lookups). Calls are paced to setlist.fm's ~2 req/sec limit; if a big batch can't finish within the time budget the rest come back `pending: true` (re-call with just those) rather than timing out. A concert whose lookup fails upstream comes back with `match: null` and an `error` message (counted in `errored`) while the rest of the batch still resolves — re-call with just those. A missing or rejected API key (401/403) fails the whole call at once instead, since no concert could resolve. Keep batches ≤24." +
         ATTRIBUTION_NOTE,

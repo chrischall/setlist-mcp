@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
+import { URL_PARSE_META } from './hints.js';
 
 /**
  * Extract the setlist ID from a setlist.fm setlist URL. The ID is the trailing
@@ -29,6 +30,7 @@ export function registerUrlTools(server: McpServer): void {
   server.registerTool(
     'setlist_id_from_url',
     {
+      _meta: URL_PARSE_META,
       title: 'Extract a setlist ID from a setlist.fm URL',
       description:
         'Parse the setlist ID out of a setlist.fm setlist URL so you can paste a link instead of hunting for the ID. Returns {setlistId} (the trailing hex token before .html), ready to feed into setlist_get_setlist / setlist_mark_attended. Scoped to /setlist/ pages — artist (/setlists/) and venue (/venue/) URLs are rejected. Tolerates http/https, with/without www, trailing slash, query/fragment, and a missing .html. Pure local parsing — no network call. Errors if no ID can be parsed.',

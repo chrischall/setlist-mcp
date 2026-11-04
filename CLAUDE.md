@@ -57,6 +57,8 @@ src/
     attendance.ts # setlist_mark_attended, setlist_unmark_attended (authenticated website writes via web-client.ts)
     urls.ts       # setlist_id_from_url (pure local parser — extracts the setlist ID from a /setlist/ URL)
     utilities.ts  # setlist_healthcheck
+    hints.ts      # _meta.mint context-group hints (domain family; lookup/change/other,
+                  #   no canonical read, no subject) — every tool but the healthcheck
 ```
 
 Each tool file exports a `register<Domain>Tools(server)` function that calls `server.registerTool(name, { description, annotations, inputSchema }, handler)` (high-level `McpServer` API with zod schemas) and returns results via `viewResponse(view, data)` (`src/view.ts`) on the read tools, or `minifiedResult(...)` on the writes. `index.ts` just wires them all up through `runMcp` from `@chrischall/mcp-utils`.

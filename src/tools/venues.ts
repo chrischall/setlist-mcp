@@ -4,6 +4,7 @@ import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { VENUE_LOOKUP_META } from './hints.js';
 
 const page = z
   .number()
@@ -16,6 +17,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
   server.registerTool(
     'setlist_search_venues',
     {
+      _meta: VENUE_LOOKUP_META,
       description:
         "Search setlist.fm for venues by name and/or location. Returns matching venues with their venue ID — use it with setlist_get_venue or setlist_get_venue_setlists." +
         ATTRIBUTION_NOTE,
@@ -43,6 +45,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
   server.registerTool(
     'setlist_get_venue',
     {
+      _meta: VENUE_LOOKUP_META,
       description: "Get a setlist.fm venue by its ID." + ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
@@ -59,6 +62,7 @@ export function registerVenueTools(server: McpServer, client: SetlistClient): vo
   server.registerTool(
     'setlist_get_venue_setlists',
     {
+      _meta: VENUE_LOOKUP_META,
       description:
         "Get setlists performed at a venue, by venue ID (most recent first). Paginated via `p`." +
         ATTRIBUTION_NOTE,
