@@ -4,6 +4,7 @@ import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { ATTENDED_LOOKUP_META, USER_LOOKUP_META } from './hints.js';
 
 const page = z
   .number()
@@ -16,6 +17,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
   server.registerTool(
     'setlist_get_user',
     {
+      _meta: USER_LOOKUP_META,
       description:
         "Get a setlist.fm user's public profile by their userId (their setlist.fm username)." +
         ATTRIBUTION_NOTE,
@@ -34,6 +36,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
   server.registerTool(
     'setlist_get_user_attended',
     {
+      _meta: ATTENDED_LOOKUP_META,
       description:
         "Get the concerts a setlist.fm user has marked as attended. Paginated via `p`." +
         ATTRIBUTION_NOTE,
@@ -57,6 +60,7 @@ export function registerUserTools(server: McpServer, client: SetlistClient): voi
   server.registerTool(
     'setlist_get_user_edited',
     {
+      _meta: USER_LOOKUP_META,
       description:
         "Get the setlists a setlist.fm user has created or edited. Paginated via `p`." +
         ATTRIBUTION_NOTE,

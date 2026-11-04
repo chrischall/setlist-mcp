@@ -4,6 +4,7 @@ import { toolAnnotations } from '@chrischall/mcp-utils';
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { ARTIST_LOOKUP_META, SHOW_LOOKUP_META } from './hints.js';
 
 const page = z
   .number()
@@ -16,6 +17,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
   server.registerTool(
     'setlist_search_artists',
     {
+      _meta: ARTIST_LOOKUP_META,
       description:
         "Search setlist.fm for artists by name or MusicBrainz ID. Returns matching artists with their MusicBrainz ID (mbid) — use that mbid with setlist_get_artist or setlist_get_artist_setlists." +
         ATTRIBUTION_NOTE,
@@ -42,6 +44,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
   server.registerTool(
     'setlist_get_artist',
     {
+      _meta: ARTIST_LOOKUP_META,
       description: "Get a setlist.fm artist by their MusicBrainz ID (mbid)." + ATTRIBUTION_NOTE,
       annotations: toolAnnotations({ readOnly: true, idempotent: true, openWorld: true }),
       inputSchema: z.object({
@@ -58,6 +61,7 @@ export function registerArtistTools(server: McpServer, client: SetlistClient): v
   server.registerTool(
     'setlist_get_artist_setlists',
     {
+      _meta: SHOW_LOOKUP_META,
       description:
         "Get an artist's setlists (most recent first) by their MusicBrainz ID (mbid). Paginated via `p`." +
         ATTRIBUTION_NOTE,

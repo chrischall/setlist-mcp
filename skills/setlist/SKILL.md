@@ -151,6 +151,25 @@ The other five tools take no `view`, each for its own reason:
 - **"Setlists at Red Rocks in 2023"** → `setlist_search_venues` (Red Rocks → venueId) → `setlist_search_setlists` with `venueId` + `year: 2023`.
 - **"Phish on 2023-08-07"** → `setlist_search_setlists` with `artistName: "Phish"`, `date: "2023-08-07"`.
 
+## In context groups
+
+On a host that groups MCPs by context (mcp-host's context groups), this server
+sits in the **family** group. It carries `lookup` hints on its reads (setlists,
+artists, venues, cities, users, the batch resolver), an `other` hint on the
+local `setlist_id_from_url` parser, and `change` hints on the two "I was there"
+attendance writes, with the words people say ("concert", "setlist", "gig",
+"venue", "my concerts", "i was there") as aliases.
+
+It has **no canonical read and no subject**: setlist.fm records shows that
+already happened, so nothing in it answers "what's new", "what's due" or
+"what's on" for a person, and it has no listable set of people or accounts to
+fan out over. A compound family ask ("what's on this weekend, and what did that
+band play last night?") reaches it only for the second half, as an ordinary
+lookup. The reads need only the API key and never a browser; the attendance
+writes may use the fetchproxy browser bridge, so on a host where that bridge
+signs them in, they answer "needs your browser open" when no signed-in
+setlist.fm tab is connected.
+
 ## Attribution & API terms
 
 setlist.fm's [API terms](https://www.setlist.fm/help/api-terms) bind anyone using this data. When you present setlist.fm results to a user:

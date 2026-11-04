@@ -4,6 +4,7 @@ import { isoToDmy, isoToCompactTimestamp, toolAnnotations } from '@chrischall/mc
 import { viewArg, viewResponse } from '../view.js';
 import type { SetlistClient } from '../client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { SHOW_LOOKUP_META } from './hints.js';
 
 // How to read a setlist's song data (per setlist.fm's guidelines), so the model
 // renders shows correctly. Appended to the get_setlist descriptions.
@@ -21,6 +22,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
   server.registerTool(
     'setlist_search_setlists',
     {
+      _meta: SHOW_LOOKUP_META,
       description:
         "Search setlist.fm for concert setlists. Filter by any combination of artist, venue, city, country, tour, date, or year (provide at least one). Combine filters to disambiguate — artistName + date can span multiple cities, so add cityName/cityId or venueName/venueId to pin the exact show. Omit the artist and pass venueName/venueId + date to list EVERY performer at a venue or festival that day. Every result includes songCount, setCount, and hasSongs, so you can skip empty 'stub' setlists (hasSongs: false) without a second fetch." +
         ATTRIBUTION_NOTE,
@@ -64,6 +66,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
   server.registerTool(
     'setlist_get_setlist',
     {
+      _meta: SHOW_LOOKUP_META,
       description:
         "Get a setlist.fm setlist by its ID, including the full song list and event details." +
         SETLIST_SHAPE_NOTE +
@@ -83,6 +86,7 @@ export function registerSetlistTools(server: McpServer, client: SetlistClient): 
   server.registerTool(
     'setlist_get_setlist_version',
     {
+      _meta: SHOW_LOOKUP_META,
       description:
         "Get a specific historical version of a setlist by its version ID. Setlists are wiki-edited; each edit has a version ID returned in a setlist's `versionId` field." +
         SETLIST_SHAPE_NOTE +

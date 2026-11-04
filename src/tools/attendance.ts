@@ -4,6 +4,7 @@ import { minifiedResult, toolAnnotations } from '@chrischall/mcp-utils';
 import type { SetlistClient } from '../client.js';
 import { webClient, isTransient5xx } from '../web-client.js';
 import { ATTRIBUTION_NOTE } from '../attribution.js';
+import { ATTENDANCE_META } from './hints.js';
 
 function decodeEntities(s: string): string {
   return s
@@ -234,6 +235,7 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
   server.registerTool(
     'setlist_mark_attended',
     {
+      _meta: ATTENDANCE_META,
       description:
         "Record on YOUR setlist.fm account that you attended a show — the site's \"I was there\" marker — by setlist ID. Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if already marked. Reversible with setlist_unmark_attended. Toggles attendance and verifies by re-reading the setlist page." +
         RESULT_NOTE +
@@ -249,6 +251,7 @@ export function registerAttendanceTools(server: McpServer, client: SetlistClient
   server.registerTool(
     'setlist_unmark_attended',
     {
+      _meta: ATTENDANCE_META,
       description:
         'Remove a show from YOUR attended list on setlist.fm, by setlist ID (reverses setlist_mark_attended). Authenticated via your setlist.fm session — SETLIST_SESSION_COOKIE, or a signed-in browser tab via the fetchproxy bridge. Idempotent: a no-op if not currently attended. Reversible with setlist_mark_attended. Removes the attendance and verifies by re-reading the setlist page.' +
         RESULT_NOTE +
