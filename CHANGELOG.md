@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/chrischall/setlist-mcp/compare/v1.1.9...v1.2.0) (2026-11-04)
+
+
+### Features
+
+* context-group hints ([#230](https://github.com/chrischall/setlist-mcp/issues/230)) ([3792be1](https://github.com/chrischall/setlist-mcp/commit/3792be105ad40c7789b44288582fac0594e67af5))
+
+
+### Bug Fixes
+
+* **deps:** Bump dotenv ([#223](https://github.com/chrischall/setlist-mcp/issues/223)) ([83b6810](https://github.com/chrischall/setlist-mcp/commit/83b681035ee0162330e1a91b84c8f8698f637ed1))
+* **deps:** Bump the production-dependencies group across 1 directory with 3 updates ([#229](https://github.com/chrischall/setlist-mcp/issues/229)) ([539f986](https://github.com/chrischall/setlist-mcp/commit/539f986215ccdbc436f6430c3f63a31e526da95e))
+* **deps:** Bump the production-dependencies group with 3 updates ([#227](https://github.com/chrischall/setlist-mcp/issues/227)) ([3663c29](https://github.com/chrischall/setlist-mcp/commit/3663c29d13d11e4ee16fb68c44159f13815f588f))
+
+
+### Documentation
+
+* **mint:** add sample prompts for the public catalog ([#226](https://github.com/chrischall/setlist-mcp/issues/226)) ([bf8c232](https://github.com/chrischall/setlist-mcp/commit/bf8c2322d856ad591b3163028711fd04bb7b0544))
+
 ## [1.1.9](https://github.com/chrischall/setlist-mcp/compare/v1.1.8...v1.1.9) (2026-10-16)
 
 
