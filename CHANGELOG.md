@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/chrischall/setlist-mcp/compare/v1.2.0...v1.2.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **deps:** Bump @chrischall/mcp-utils ([#232](https://github.com/chrischall/setlist-mcp/issues/232)) ([140b427](https://github.com/chrischall/setlist-mcp/commit/140b4278952fad7e6fd8e6a44edaf8c1fe2e83f9))
+
 ## [1.2.0](https://github.com/chrischall/setlist-mcp/compare/v1.1.9...v1.2.0) (2026-11-04)
 
 
