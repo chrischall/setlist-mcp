@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/chrischall/setlist-mcp/compare/v1.2.0...v1.2.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **deps:** Bump @chrischall/mcp-utils ([#232](https://github.com/chrischall/setlist-mcp/issues/232)) ([140b427](https://github.com/chrischall/setlist-mcp/commit/140b4278952fad7e6fd8e6a44edaf8c1fe2e83f9))
+* **deps:** Bump the production-dependencies group with 4 updates ([#234](https://github.com/chrischall/setlist-mcp/issues/234)) ([0790682](https://github.com/chrischall/setlist-mcp/commit/0790682e1b6ecd03df02a9980343de64f3ee4247))
+
 ## [1.2.0](https://github.com/chrischall/setlist-mcp/compare/v1.1.9...v1.2.0) (2026-11-04)
 
 
